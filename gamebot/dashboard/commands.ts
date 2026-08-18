@@ -77,12 +77,19 @@ export interface Actions {
 /** The parts of `BotWorldState` the console reads, kept structural for tests. */
 export interface Worldish {
     tick: number;
-    player: { name: string; x: number; z: number; level: number; hp: number; maxHp: number } | null;
+    /**
+     * `worldX`/`worldZ`, not `x`/`z`. The engine reports the player in a
+     * different space from everything else: in Lumbridge the player's `x`,`z`
+     * read 6976,6976 while `worldX`,`worldZ` — and every NPC's and loc's `x`,`z`
+     * — read 3222,3222. Naming the field for the space keeps a distance
+     * comparison from silently mixing them.
+     */
+    player: { name: string; worldX: number; worldZ: number; level: number; hp: number; maxHp: number } | null;
     nearbyNpcs?: { name: string; x: number; z: number }[];
     nearbyLocs?: { name: string; x: number; z: number }[];
     groundItems?: { name: string; x: number; z: number; count?: number }[];
     /** Newest last, as the engine publishes them. */
-    gameMessages?: { text: string }[];
+    gameMessages?: { text: string; tick?: number }[];
     inventory?: { name: string; count: number }[];
 }
 
@@ -112,6 +119,13 @@ const tilesFrom = (a: { x: number; z: number }, b: { x: number; z: number }) =>
 function requireState(ctx: CommandContext): Worldish {
     if (!ctx.state) throw new Error('no world state yet — is the bot logged in?');
     return ctx.state;
+}
+
+/** The player's position in *world* tiles, the space everything else uses. */
+function worldPos(
+    player: { worldX: number; worldZ: number } | null | undefined,
+): { x: number; z: number } | null {
+    return player ? { x: player.worldX, z: player.worldZ } : null;
 }
 
 /** Coins carried, from whichever frame is current. */
@@ -297,7 +311,7 @@ export const COMMANDS: Command[] = [
         run(args, ctx) {
             const state = requireState(ctx);
             const re = matcher(args);
-            const me = state.player;
+            const me = worldPos(state.player);
             const found = (state.nearbyNpcs ?? [])
                 .filter((n) => !re || re.test(n.name))
                 .sort((a, b) => (me ? tilesFrom(me, a) - tilesFrom(me, b) : 0))
@@ -316,7 +330,7 @@ export const COMMANDS: Command[] = [
         run(args, ctx) {
             const state = requireState(ctx);
             const re = matcher(args);
-            const me = state.player;
+            const me = worldPos(state.player);
             const found = (state.nearbyLocs ?? [])
                 .filter((l) => !re || re.test(l.name))
                 .sort((a, b) => (me ? tilesFrom(me, a) - tilesFrom(me, b) : 0))
@@ -335,7 +349,7 @@ export const COMMANDS: Command[] = [
         run(args, ctx) {
             const state = requireState(ctx);
             const re = matcher(args);
-            const me = state.player;
+            const me = worldPos(state.player);
             const found = (state.groundItems ?? [])
                 .filter((g) => !re || re.test(g.name))
                 .sort((a, b) => (me ? tilesFrom(me, a) - tilesFrom(me, b) : 0))
@@ -415,9 +429,9 @@ export const COMMANDS: Command[] = [
             const z = Number(args[1]);
             if (!Number.isFinite(x) || !Number.isFinite(z)) return 'usage: walk <x> <z>';
             if (!ctx.act) return 'no action channel on this connection';
-            const from = ctx.state?.player;
+            const from = worldPos(ctx.state?.player ?? null);
             const result = await ctx.act.walkTo(x, z);
-            const to = (await ctx.settle?.(2))?.player ?? ctx.state?.player;
+            const to = worldPos((await ctx.settle?.(2))?.player ?? ctx.state?.player ?? null);
             const moved = from && to ? tilesFrom(from, to) : 0;
             if (!result.success) return `walk failed: ${result.message ?? 'unknown'} (moved ${moved}t)`;
             const short = to ? tilesFrom(to, { x, z }) : 0;
@@ -444,7 +458,10 @@ export const COMMANDS: Command[] = [
 
             for (let attempt = 0; attempt < count; attempt++) {
                 const before = ctx.state?.player?.hp ?? 0;
-                const seen = ctx.state?.gameMessages?.length ?? 0;
+                // Filter by tick, not by array index: `gameMessages` is a
+                // bounded buffer, so once it is full its length stops growing
+                // and an index slice silently returns nothing.
+                const sinceTick = ctx.state?.tick ?? 0;
 
                 const event = randomEventNearby(ctx.state?.nearbyNpcs ?? []);
                 if (event) {
@@ -457,7 +474,9 @@ export const COMMANDS: Command[] = [
                 // A failure stuns for eight ticks; wait past it before reading,
                 // or the next attempt reads the previous one's messages.
                 const after = await ctx.settle?.(9);
-                const messages = (after?.gameMessages ?? []).slice(seen).map((m) => m.text);
+                const messages = (after?.gameMessages ?? [])
+                    .filter((m) => (m.tick ?? 0) > sinceTick)
+                    .map((m) => m.text);
                 const outcome: Outcome = result.success
                     ? classify(messages, { before, after: after?.player?.hp ?? before })
                     : classify(messages.concat(result.message ?? ''), { before, after: after?.player?.hp ?? before });

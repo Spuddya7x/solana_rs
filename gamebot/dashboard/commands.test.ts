@@ -8,7 +8,7 @@ function context(over: Partial<CommandContext> = {}): CommandContext {
     tracker.push({
         tick: 100,
         inGame: true,
-        player: { name: 'testbot', combatLevel: 3, hp: 7, maxHp: 10, x: 3222, z: 3218, level: 0, runEnergy: 90 },
+        player: { name: 'testbot', combatLevel: 3, hp: 7, maxHp: 10, worldX: 3222, worldZ: 3218, level: 0, runEnergy: 90 },
         skills: [
             { name: 'Thieving', level: 12, baseLevel: 12, experience: 1_800 },
             { name: 'Cooking', level: 1, baseLevel: 1, experience: 0 },
@@ -179,7 +179,7 @@ describe('live commands', () => {
             context({
                 state: {
                     tick: 1,
-                    player: { name: 'b', x: 3222, z: 3218, level: 0, hp: 10, maxHp: 10 },
+                    player: { name: 'b', worldX: 3222, worldZ: 3218, level: 0, hp: 10, maxHp: 10 },
                     nearbyNpcs: [
                         { name: 'Far guard', x: 3260, z: 3218 },
                         { name: 'Near man', x: 3223, z: 3218 },
@@ -238,7 +238,7 @@ describe('control-tier actions', () => {
     }) {
         const base = {
             tick: 1,
-            player: { name: 'b', x: 3222, z: 3218, level: 0, hp: 10, maxHp: 10 },
+            player: { name: 'b', worldX: 3222, worldZ: 3218, level: 0, hp: 10, maxHp: 10 },
             nearbyNpcs: [{ name: 'Man', x: 3221, z: 3219 }],
             gameMessages: [] as { text: string }[],
             inventory: [{ name: 'Coins', count: 100 }],
@@ -251,7 +251,17 @@ describe('control-tier actions', () => {
             state: current,
             settle: async () => {
                 const next = queue.shift();
-                if (next) current = { ...current, ...next } as import('./commands').Worldish;
+                // Advance the tick and stamp the frame's messages with it, the
+                // way the engine does. `gameMessages` is a bounded buffer, so
+                // the command filters by tick rather than by index — a fixture
+                // without ticks would exercise a path that cannot happen.
+                const tick = (current.tick ?? 0) + 10;
+                current = {
+                    ...current,
+                    ...next,
+                    tick,
+                    gameMessages: (next?.gameMessages ?? []).map((m) => ({ ...m, tick })),
+                } as import('./commands').Worldish;
                 ctx.state = current;
                 return current;
             },
@@ -267,7 +277,7 @@ describe('control-tier actions', () => {
     test('walk reports where it actually stopped, not where it was aimed', async () => {
         // walkTo succeeds on arriving near enough, so saying "arrived" would lie.
         const { ctx } = acting({
-            frames: [{ player: { name: 'b', x: 3230, z: 3218, level: 0, hp: 10, maxHp: 10 } }],
+            frames: [{ player: { name: 'b', worldX: 3230, worldZ: 3218, level: 0, hp: 10, maxHp: 10 } }],
         });
         const result = await execute('walk 3232 3218', ctx);
         expect(result.output).toContain('(3230,3218)');
@@ -329,8 +339,8 @@ describe('control-tier actions', () => {
     test('eat reports the hitpoints that landed, not the food listing', async () => {
         // Healing clips at max, so a 3 hp shrimp eaten at 9/10 gives 1.
         const { ctx } = acting({
-            start: { player: { name: 'b', x: 0, z: 0, level: 0, hp: 9, maxHp: 10 } },
-            frames: [{ player: { name: 'b', x: 0, z: 0, level: 0, hp: 10, maxHp: 10 } }],
+            start: { player: { name: 'b', worldX: 0, worldZ: 0, level: 0, hp: 9, maxHp: 10 } },
+            frames: [{ player: { name: 'b', worldX: 0, worldZ: 0, level: 0, hp: 10, maxHp: 10 } }],
         });
         const result = await execute('eat shrimps', ctx);
         expect(result.output).toContain('9 -> 10/10 hp (+1)');
@@ -345,7 +355,7 @@ describe('control-tier actions', () => {
 
     test('eat surfaces having nothing to eat', async () => {
         const { ctx } = acting({
-            start: { player: { name: 'b', x: 0, z: 0, level: 0, hp: 4, maxHp: 10 } },
+            start: { player: { name: 'b', worldX: 0, worldZ: 0, level: 0, hp: 4, maxHp: 10 } },
             eat: () => ({ success: false, message: 'no shrimps in inventory' }),
         });
         expect((await execute('eat shrimps', ctx)).output).toContain('no shrimps');

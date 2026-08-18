@@ -55,8 +55,8 @@ function frame(over: Partial<StateFrame>): StateFrame {
             combatLevel: 3,
             hp: 7,
             maxHp: 10,
-            x: 3221,
-            z: 3219,
+            worldX: 3221,
+            worldZ: 3219,
             level: 0,
             runEnergy: 64,
         },
@@ -156,7 +156,7 @@ const server = Bun.serve({
                 session: tracker.snapshot(),
                 state: {
                     tick: 15_095,
-                    player: { name: 'mercbot01', x: 3221, z: 3219, level: 0, hp: 7, maxHp: 10 },
+                    player: { name: 'mercbot01', worldX: 3221, worldZ: 3219, level: 0, hp: 7, maxHp: 10 },
                     nearbyNpcs: [
                         { name: 'Man', x: 3221, z: 3219 },
                         { name: 'Woman', x: 3217, z: 3205 },

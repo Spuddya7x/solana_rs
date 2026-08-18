@@ -33,6 +33,11 @@
  *
  * The tutorial hands out the bronze axe, tinderbox and small fishing net at
  * `tutorial_complete`, so the whole circuit costs nothing to start.
+ *
+ * One SDK trap worth naming, because it is silent: **`waitForReady(n)` takes a
+ * timeout in milliseconds, not ticks.** `waitForReady(6)` is "give up after six
+ * milliseconds" and returns instantly, so a loop built on it spins instead of
+ * pacing. `waitForTicks(n)` is the one that waits for game time to pass.
  */
 
 import type { BotSDK } from '../../../sdk/index';
@@ -50,8 +55,15 @@ export const LUMBRIDGE = { x: 3222, z: 3218 } as const;
 /** Hitpoints one cooked shrimp restores, from `consume_normal.dbrow`. */
 export const SHRIMP_HEAL = 3;
 
-/** The tools the tutorial grants, all of which this loop needs. */
-export const TOOLS = ['net', 'tinderbox', 'bronze axe'] as const;
+/**
+ * The tools the tutorial grants, all of which this loop needs.
+ *
+ * Matched against the **display** name, which is what the SDK reports and is
+ * not the script id: `tutorial_complete` adds `net`, and the inventory calls it
+ * *"Small fishing net"*. An `^net$` test never matches it, which silently
+ * disables the whole forage loop.
+ */
+export const TOOLS = [/^small fishing net$/i, /^tinderbox$/i, /^bronze axe$/i] as const;
 
 /** Result of one forage circuit. */
 export interface ForageResult {
@@ -67,7 +79,14 @@ export interface ForageResult {
 
 /** Whether the account is carrying everything the circuit needs. */
 export function hasTools(sdk: BotSDK): boolean {
-    return TOOLS.every((tool) => sdk.countInventoryItems(new RegExp(`^${tool}$`, 'i')) > 0);
+    return TOOLS.every((tool) => sdk.countInventoryItems(tool) > 0);
+}
+
+/** Which of the required tools are missing, for a message worth reading. */
+export function missingTools(sdk: BotSDK): string[] {
+    return TOOLS.filter((tool) => sdk.countInventoryItems(tool) === 0).map((tool) =>
+        tool.source.replace(/[\^$]/g, ''),
+    );
 }
 
 /**
@@ -94,7 +113,7 @@ export async function fishShrimp(
             // The spots shuffle between adjacent tiles; give the scan a moment
             // before concluding there is nothing here.
             if (++idle > 3) break;
-            await sdk.waitForReady(3);
+            await sdk.waitForTicks(3);
             continue;
         }
         idle = 0;
@@ -102,7 +121,7 @@ export async function fishShrimp(
         const caughtBefore = sdk.countInventoryItems(/^raw shrimps$/i);
         await bot.interactNpc(spot, /net|small net|fish/i);
         // A catch roll lands every five ticks; wait past one before judging.
-        await sdk.waitForReady(6);
+        await sdk.waitForTicks(6);
         if (sdk.countInventoryItems(/^raw shrimps$/i) > caughtBefore) {
             opts.onProgress?.(sdk.countInventoryItems(/^raw shrimps$/i) - before);
         }
@@ -152,7 +171,7 @@ export async function cookOnAFire(sdk: BotSDK, bot: BotActions): Promise<number>
         await bot.useItemOnLoc(/^raw shrimps$/i, fire);
         await sdk.sendCountDialog(remaining);
         // A cook is roughly four ticks a fish; wait for the batch, not a fish.
-        await sdk.waitForReady(4 * remaining + 4);
+        await sdk.waitForTicks(4 * remaining + 4);
         if (sdk.countInventoryItems(/^raw shrimps$/i) === remaining) break; // stuck
     }
 

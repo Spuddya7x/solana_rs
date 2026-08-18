@@ -136,7 +136,7 @@ async function run(line: string): Promise<{ ok: boolean; output: string; mode: N
         state: latest,
         mode,
         settle: async (ticks) => {
-            await sdk.waitForReady(ticks);
+            await sdk.waitForTicks(ticks);
             return latest;
         },
         // Only handed over while the connection actually holds control, so a

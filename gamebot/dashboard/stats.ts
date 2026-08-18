@@ -32,8 +32,18 @@ export interface StateFrame {
         combatLevel: number;
         hp: number;
         maxHp: number;
-        x: number;
-        z: number;
+        /**
+         * World tiles — the space every coordinate in this bot is expressed in,
+         * and the space NPCs and locs already report their own `x`/`z` in.
+         *
+         * `PlayerState` also carries plain `x`/`z`, and those are **not** the
+         * same thing: standing in Lumbridge they read 6976,6976 against a
+         * worldX/worldZ of 3222,3222. Mixing the two silently produces
+         * distances that are wrong by thousands of tiles, which is exactly what
+         * this field being named unambiguously is here to prevent.
+         */
+        worldX: number;
+        worldZ: number;
         level: number;
         runEnergy: number;
     } | null;
@@ -235,7 +245,7 @@ export class SessionTracker {
             tick: frame?.tick ?? 0,
             inGame: frame?.inGame ?? false,
             position: frame?.player
-                ? { x: frame.player.x, z: frame.player.z, level: frame.player.level }
+                ? { x: frame.player.worldX, z: frame.player.worldZ, level: frame.player.level }
                 : null,
             hp: frame?.player ? { current: frame.player.hp, max: frame.player.maxHp } : null,
             runEnergy: frame?.player?.runEnergy ?? 0,

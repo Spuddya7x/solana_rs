@@ -34,7 +34,7 @@
  */
 
 import { runScript } from '../../sdk/runner';
-import { forage, hasTools, SHRIMP_HEAL } from './lib/forage';
+import { forage, hasTools, missingTools, SHRIMP_HEAL } from './lib/forage';
 import {
     bestTarget,
     canContinue,
@@ -80,7 +80,7 @@ await runScript(async ({ bot, sdk }) => {
     );
     if (RECOVER === 'forage' && !hasTools(sdk)) {
         console.log(
-            'warning: no net/tinderbox/axe in the inventory — the forage loop needs all three ' +
+            `warning: missing ${missingTools(sdk).join(', ')} — the forage loop needs all three ` +
                 '(the tutorial grants them). Falling back to idle recovery.',
         );
     }
@@ -96,7 +96,7 @@ await runScript(async ({ bot, sdk }) => {
         // --- eat back into the green before deciding anything else ---
         while (!canContinue(sdk, target) && sdk.countInventoryItems(/^shrimps$/i) > 0) {
             await bot.eatFood(/^shrimps$/i);
-            await sdk.waitForReady(3);
+            await sdk.waitForTicks(3);
         }
 
         if (!canContinue(sdk, target)) {
@@ -123,7 +123,7 @@ await runScript(async ({ bot, sdk }) => {
         const npc = sdk.findNearbyNpc(target.pattern);
         if (!npc) {
             await bot.walkTo(target.where.x, target.where.z);
-            await sdk.waitForReady(3);
+            await sdk.waitForTicks(3);
             continue;
         }
 
@@ -132,11 +132,11 @@ await runScript(async ({ bot, sdk }) => {
         attempts++;
         // A success resolves next tick; a failure holds `%action_delay` for the
         // full stun, so waiting it out here is what keeps the send rate honest.
-        await sdk.waitForReady(2);
+        await sdk.waitForTicks(2);
         if (sdk.countInventoryItems(/^coins$/i) > before) {
             successes++;
         } else {
-            await sdk.waitForReady(target.stunTicks);
+            await sdk.waitForTicks(target.stunTicks);
         }
 
         if (attempts % 50 === 0) {
@@ -175,6 +175,6 @@ async function idleUntilSafe(
         const hp = hitpoints(sdk);
         // Recover a little past the floor, or the very next failure stops us again.
         if (hp && hp.current >= Math.min(hp.max, floor + SHRIMP_HEAL * 2)) return;
-        await sdk.waitForReady(100);
+        await sdk.waitForTicks(100);
     }
 }
