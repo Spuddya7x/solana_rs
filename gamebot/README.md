@@ -24,6 +24,15 @@ gamebot alch-loop.ts       -> 0.6 x cost in GP, one cast per 3 seconds
 Exchange Clerk (withdraw)  -> GP minted back to the wallet
 ```
 
+## Running it locally
+
+**[RUNBOOK.md](RUNBOOK.md)** — four terminals, verified command by command
+against a real local server. Read that first if you want to see this move.
+
+Two things it will save you: a fresh account spawns on **Tutorial Island** and
+nothing works until `skipTutorial()` gets it out, and the engine needs
+`BUILD_VERIFY=false` because mercantile patches the content.
+
 ## Install
 
 ```sh
