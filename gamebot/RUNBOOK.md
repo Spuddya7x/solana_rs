@@ -113,9 +113,11 @@ bun server/webclient/src/lite/runner.ts mercbot
 [lite-runner] Gateway connected, registering as 'mercbot01'
 ```
 
-To *watch* it instead, open `http://localhost:8888/bot?bot=mercbot01&password=test`
-in a browser — but run one or the other, not both. A second client takes the
-session over (the engine logs `session takeover`).
+The SDK's README points at a browser client on `/bot?bot=…&password=…`, and on
+this build **it does not work**: the page loads, 404s on a resource, and never
+registers with the gateway — no `[Gateway]` line ever appears for it. Use the
+headless runner. See *Watching it play* below for how to actually see the
+character.
 
 ### 4 — the dashboard
 
@@ -193,6 +195,23 @@ Or drive it by hand from the dashboard console:
 | `control --force` | take the character (disconnects the running script) |
 | `pickpocket man 5` | five attempts, each outcome named |
 
+## Watching it play
+
+The bot has no screen. The headless runner is a protocol connection, and the
+dashboard shows numbers, not a game view. To watch the character move, log a
+**second** character in as a spectator:
+
+1. Open <http://localhost:8888/rs2.cgi>.
+2. Create any second account — authentication is disabled locally, so any
+   name and password work.
+3. Walk it to Lumbridge, around `(3222, 3218)`.
+4. Your bot is standing there. Start `thief.ts` and watch it work.
+
+This costs nothing and disturbs nothing: it is just another player in the world.
+Do **not** open `/bot?bot=<yourbot>` for this — besides not registering with the
+gateway, a second client on the same account takes the session over, and the
+engine logs `session takeover` as it drops the first one.
+
 ## What is verified, and what is not
 
 **Verified against the live server just now:**
@@ -216,6 +235,9 @@ Or drive it by hand from the dashboard console:
   here. The Rust side talks to mainnet and is unaffected.
 - **Random events.** `NODE_RANDOM_EVENTS` defaults to false, so nothing has
   exercised that path.
+
+**Verified as broken:** the `/bot?bot=…&password=…` browser client the SDK
+README suggests. It serves a page and then never registers with the gateway.
 
 ## Three traps that cost me an hour
 
