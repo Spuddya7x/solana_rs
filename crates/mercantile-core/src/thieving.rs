@@ -71,9 +71,22 @@ pub struct Pickpocket {
     pub stun_damage: u32,
     /// `success_chance` low and high, fed to [`stat_random`].
     pub chance: (i64, i64),
-    /// Coins a success pays. Every row below `rogue` has a single guaranteed
-    /// coin drop, so this is exact rather than an average.
-    pub coins: f64,
+    /// The row's `loot` entries, in the order the dbrow lists them.
+    ///
+    /// Transcribed, not summarised: the probabilities are *derived* from these
+    /// by [`Pickpocket::drop_chances`], because reading them off by eye gets
+    /// them wrong. See that function for why.
+    pub loot: &'static [Drop],
+}
+
+/// One `data=loot,<item>,<min>,<max>,<numerator>` entry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Drop {
+    pub item: &'static str,
+    pub min: u32,
+    pub max: u32,
+    /// Weight out of the *current* denominator, which shrinks as the loop runs.
+    pub numerator: i64,
 }
 
 impl Pickpocket {
@@ -98,9 +111,67 @@ impl Pickpocket {
         ticks * TICK_SECONDS
     }
 
+    /// Every drop this row can produce, with the chance the engine gives it.
+    ///
+    /// `pick_pocket_check_for_reward` is not a pick-one table. It walks the
+    /// entries **backwards** with a denominator that starts at 128 and shrinks
+    /// by each numerator as it goes, rolling every entry:
+    ///
+    /// ```text
+    /// $roll = random($denominator)          // before the subtraction
+    /// $denominator = $denominator - $numerator
+    /// if ($roll >= $denominator) { inv_add(...) }
+    /// ```
+    ///
+    /// Two things fall out of that, and both are easy to get wrong by eye:
+    ///
+    /// * **A success can grant several items at once.** There is no `return`
+    ///   after a hit, unlike the stall table's `stealing_check_for_reward`. A
+    ///   rogue can pay coins *and* air runes *and* wine in one pick.
+    /// * **The last entry processed — the dbrow's first — is usually
+    ///   guaranteed**, because the numerators sum to 128 and drive the
+    ///   denominator to zero. So the rogue's coins are certain, not 108/128.
+    ///
+    /// The exception is a row whose numerators sum to *less* than 128: the
+    /// farmer's single entry is 123, so 5 of 128 successful picks pay nothing.
+    pub fn drop_chances(&self) -> Vec<(Drop, f64)> {
+        let mut denominator: i64 = 128;
+        let mut out = Vec::with_capacity(self.loot.len());
+        for drop in self.loot.iter().rev() {
+            let before = denominator;
+            let after = denominator - drop.numerator;
+            // `random(n)` yields 0..n-1, so a hit needs `roll >= after`. A
+            // non-positive `after` cannot be missed; `before <= 0` means the
+            // denominator has already been exhausted and the test is trivially
+            // true (the watchman's second entry does exactly this).
+            let chance = if before <= 0 || after <= 0 {
+                1.0
+            } else {
+                (before - after) as f64 / before as f64
+            };
+            out.push((*drop, chance));
+            denominator = after;
+        }
+        out.reverse();
+        out
+    }
+
+    /// Expected coins from one success, across the whole loot table.
+    pub fn coins(&self) -> f64 {
+        self.drop_chances()
+            .iter()
+            .filter(|(drop, _)| drop.item == "coins")
+            .map(|(drop, chance)| (drop.min + drop.max) as f64 / 2.0 * chance)
+            .sum()
+    }
+
     /// Coins per hour of uninterrupted thieving — before any healing downtime.
+    ///
+    /// Coins only. The rogue's runes and the gnome's worms are real income but
+    /// they have to be carried and sold, so they do not belong in a rate that
+    /// the sustain model treats as spendable.
     pub fn gp_per_hour(&self, level: u32) -> f64 {
-        3_600.0 / self.seconds_per_attempt(level) * self.success(level) * self.coins
+        3_600.0 / self.seconds_per_attempt(level) * self.success(level) * self.coins()
     }
 
     /// Thieving XP per hour of uninterrupted thieving.
@@ -130,9 +201,10 @@ impl Pickpocket {
 
 /// The pickpocket table, cheapest target first.
 ///
-/// Transcribed from `pickpocket.dbrow`. Rows whose loot is a mixed table
-/// (`rogue`, `gnome`, `hero`) carry the expected coin value of that table rather
-/// than a guaranteed drop, so treat those as averages.
+/// Every field is transcribed from `pickpocket.dbrow` exactly as the game
+/// stores it, including the loot numerators. Nothing here is a summary: the
+/// probabilities come from replaying the engine's own reward loop in
+/// [`Pickpocket::drop_chances`], which is the only way to get them right.
 pub const PICKPOCKETS: &[Pickpocket] = &[
     Pickpocket {
         name: "man/woman",
@@ -142,7 +214,12 @@ pub const PICKPOCKETS: &[Pickpocket] = &[
         stun_ticks: 8,
         stun_damage: 1,
         chance: (180, 240),
-        coins: 3.0,
+        loot: &[Drop {
+            item: "coins",
+            min: 3,
+            max: 3,
+            numerator: 128,
+        }],
     },
     Pickpocket {
         name: "farmer",
@@ -152,7 +229,12 @@ pub const PICKPOCKETS: &[Pickpocket] = &[
         stun_ticks: 8,
         stun_damage: 1,
         chance: (150, 240),
-        coins: 9.0,
+        loot: &[Drop {
+            item: "coins",
+            min: 9,
+            max: 9,
+            numerator: 123,
+        }],
     },
     Pickpocket {
         name: "warrior",
@@ -162,7 +244,12 @@ pub const PICKPOCKETS: &[Pickpocket] = &[
         stun_ticks: 8,
         stun_damage: 2,
         chance: (100, 240),
-        coins: 18.0,
+        loot: &[Drop {
+            item: "coins",
+            min: 18,
+            max: 18,
+            numerator: 128,
+        }],
     },
     Pickpocket {
         name: "rogue",
@@ -172,8 +259,38 @@ pub const PICKPOCKETS: &[Pickpocket] = &[
         stun_ticks: 8,
         stun_damage: 2,
         chance: (74, 240),
-        // 108/128 of a 25-40 coin roll; the rune and dagger drops are ignored.
-        coins: 32.5 * 108.0 / 128.0,
+        loot: &[
+            Drop {
+                item: "coins",
+                min: 25,
+                max: 40,
+                numerator: 108,
+            },
+            Drop {
+                item: "airrune",
+                min: 8,
+                max: 8,
+                numerator: 8,
+            },
+            Drop {
+                item: "jug_wine",
+                min: 1,
+                max: 1,
+                numerator: 6,
+            },
+            Drop {
+                item: "lockpick",
+                min: 1,
+                max: 1,
+                numerator: 5,
+            },
+            Drop {
+                item: "iron_dagger_p",
+                min: 1,
+                max: 1,
+                numerator: 1,
+            },
+        ],
     },
     Pickpocket {
         name: "guard",
@@ -183,7 +300,12 @@ pub const PICKPOCKETS: &[Pickpocket] = &[
         stun_ticks: 8,
         stun_damage: 2,
         chance: (50, 240),
-        coins: 30.0,
+        loot: &[Drop {
+            item: "coins",
+            min: 30,
+            max: 30,
+            numerator: 128,
+        }],
     },
     Pickpocket {
         name: "fremennik",
@@ -193,7 +315,12 @@ pub const PICKPOCKETS: &[Pickpocket] = &[
         stun_ticks: 8,
         stun_damage: 2,
         chance: (40, 240),
-        coins: 40.0,
+        loot: &[Drop {
+            item: "coins",
+            min: 40,
+            max: 40,
+            numerator: 128,
+        }],
     },
     Pickpocket {
         name: "knight",
@@ -203,7 +330,158 @@ pub const PICKPOCKETS: &[Pickpocket] = &[
         stun_ticks: 8,
         stun_damage: 3,
         chance: (50, 240),
-        coins: 50.0,
+        loot: &[Drop {
+            item: "coins",
+            min: 50,
+            max: 50,
+            numerator: 128,
+        }],
+    },
+    Pickpocket {
+        name: "watchman",
+        npc: "yanille_watchman",
+        level: 65,
+        experience: 1375,
+        stun_ticks: 8,
+        stun_damage: 3,
+        chance: (15, 160),
+        loot: &[
+            Drop {
+                item: "coins",
+                min: 60,
+                max: 60,
+                numerator: 128,
+            },
+            Drop {
+                item: "bread",
+                min: 1,
+                max: 1,
+                numerator: 128,
+            },
+        ],
+    },
+    Pickpocket {
+        name: "paladin",
+        npc: "paladin",
+        level: 70,
+        experience: 1518,
+        stun_ticks: 8,
+        stun_damage: 3,
+        chance: (50, 150),
+        loot: &[
+            Drop {
+                item: "coins",
+                min: 80,
+                max: 80,
+                numerator: 128,
+            },
+            Drop {
+                item: "chaosrune",
+                min: 2,
+                max: 2,
+                numerator: 128,
+            },
+        ],
+    },
+    Pickpocket {
+        name: "gnome",
+        npc: "gnome",
+        level: 75,
+        experience: 1985,
+        stun_ticks: 8,
+        stun_damage: 1,
+        chance: (50, 240),
+        loot: &[
+            Drop {
+                item: "king_worm",
+                min: 1,
+                max: 1,
+                numerator: 55,
+            },
+            Drop {
+                item: "coins",
+                min: 300,
+                max: 300,
+                numerator: 30,
+            },
+            Drop {
+                item: "swamp_toad",
+                min: 1,
+                max: 1,
+                numerator: 28,
+            },
+            Drop {
+                item: "gold_ore",
+                min: 1,
+                max: 1,
+                numerator: 8,
+            },
+            Drop {
+                item: "earthrune",
+                min: 1,
+                max: 1,
+                numerator: 5,
+            },
+            Drop {
+                item: "fire_orb",
+                min: 1,
+                max: 1,
+                numerator: 2,
+            },
+        ],
+    },
+    Pickpocket {
+        name: "hero",
+        npc: "hero",
+        level: 80,
+        experience: 2751,
+        stun_ticks: 8,
+        stun_damage: 3,
+        chance: (20, 120),
+        loot: &[
+            Drop {
+                item: "coins",
+                min: 200,
+                max: 300,
+                numerator: 105,
+            },
+            Drop {
+                item: "deathrune",
+                min: 2,
+                max: 2,
+                numerator: 8,
+            },
+            Drop {
+                item: "jug_wine",
+                min: 1,
+                max: 1,
+                numerator: 6,
+            },
+            Drop {
+                item: "bloodrune",
+                min: 1,
+                max: 1,
+                numerator: 5,
+            },
+            Drop {
+                item: "fire_orb",
+                min: 1,
+                max: 1,
+                numerator: 2,
+            },
+            Drop {
+                item: "diamond",
+                min: 1,
+                max: 1,
+                numerator: 1,
+            },
+            Drop {
+                item: "gold_ore",
+                min: 1,
+                max: 1,
+                numerator: 1,
+            },
+        ],
     },
 ];
 
@@ -387,6 +665,77 @@ mod tests {
     }
 
     #[test]
+    fn the_reward_loop_guarantees_the_first_entry_when_the_weights_sum_to_128() {
+        // The rogue's coins have numerator 108 out of 128, which reads like an
+        // 84% chance and is not. The loop processes entries backwards, and by
+        // the time it reaches the coins the denominator has been shaved to 108,
+        // so `random(108) >= 0` always holds. Reading it off by eye priced the
+        // rogue 16% low.
+        let rogue = PICKPOCKETS.iter().find(|p| p.name == "rogue").unwrap();
+        let chances = rogue.drop_chances();
+        let coins = chances.iter().find(|(d, _)| d.item == "coins").unwrap();
+        assert_eq!(coins.1, 1.0);
+        assert_eq!(rogue.coins(), 32.5);
+    }
+
+    #[test]
+    fn weights_that_sum_below_128_leave_a_dud_chance() {
+        // The farmer's single entry is 123, not 128, so 5 successful picks in
+        // every 128 pay nothing at all.
+        let farmer = PICKPOCKETS.iter().find(|p| p.name == "farmer").unwrap();
+        let (_, chance) = farmer.drop_chances()[0];
+        assert!((chance - 123.0 / 128.0).abs() < 1e-9, "{chance}");
+        assert!((farmer.coins() - 8.648).abs() < 0.001, "{}", farmer.coins());
+    }
+
+    #[test]
+    fn a_success_can_grant_several_items_at_once() {
+        // There is no `return` after a hit — unlike the stall table. Every entry
+        // is rolled, so a rogue can pay coins and runes and wine in one pick.
+        let rogue = PICKPOCKETS.iter().find(|p| p.name == "rogue").unwrap();
+        let chances = rogue.drop_chances();
+        assert_eq!(chances.len(), 5);
+        assert!(chances.iter().all(|(_, c)| *c > 0.0));
+        // Everything besides the guaranteed coins is a genuine long shot.
+        let extras: Vec<f64> = chances
+            .iter()
+            .filter(|(d, _)| d.item != "coins")
+            .map(|(_, c)| *c)
+            .collect();
+        assert!(extras.iter().all(|c| *c < 0.08), "{extras:?}");
+    }
+
+    #[test]
+    fn an_exhausted_denominator_still_pays() {
+        // The watchman has two entries of 128 each. The first drives the
+        // denominator to zero, and the second then tests `random(0) >= -128`,
+        // which the engine treats as a hit — so bread and coins both land.
+        let watchman = PICKPOCKETS.iter().find(|p| p.name == "watchman").unwrap();
+        assert!(watchman.drop_chances().iter().all(|(_, c)| *c == 1.0));
+        assert_eq!(watchman.coins(), 60.0);
+    }
+
+    #[test]
+    fn the_gnome_pays_worms_far_more_often_than_coins() {
+        // A row where the guaranteed entry is worthless: king worms every time,
+        // 300 coins only about a third of the time.
+        let gnome = PICKPOCKETS.iter().find(|p| p.name == "gnome").unwrap();
+        let chances = gnome.drop_chances();
+        let worm = chances.iter().find(|(d, _)| d.item == "king_worm").unwrap();
+        let coins = chances.iter().find(|(d, _)| d.item == "coins").unwrap();
+        assert_eq!(worm.1, 1.0);
+        assert!(coins.1 < 0.4, "{}", coins.1);
+    }
+
+    #[test]
+    fn every_row_pays_something_on_a_success() {
+        for row in PICKPOCKETS {
+            let total: f64 = row.drop_chances().iter().map(|(_, c)| c).sum();
+            assert!(total > 0.9, "{} pays nothing: {total}", row.name);
+        }
+    }
+
+    #[test]
     fn a_man_pays_three_coins_seven_times_in_ten() {
         let p = man().success(1);
         assert!((p - 0.707).abs() < 0.001, "{p}");
@@ -400,8 +749,11 @@ mod tests {
         // farmer pays three times as much for the same one-hitpoint stun.
         let farmer = &PICKPOCKETS[1];
         assert!(farmer.gp_per_hour(10) > 2.0 * man().gp_per_hour(10));
-        // 68 hitpoints per 1000 GP against 125 — a little under half.
-        assert!(farmer.hp_per_1000_gp(10) < man().hp_per_1000_gp(10) / 1.8);
+        // 70 hitpoints per 1000 GP against 125 — a little under half. The
+        // farmer's 9 coins land on only 123 successes in 128, so this is 8.65
+        // per pick, not 9.
+        assert!((farmer.coins() - 8.648).abs() < 0.001);
+        assert!(farmer.hp_per_1000_gp(10) < man().hp_per_1000_gp(10) / 1.7);
     }
 
     #[test]
@@ -409,7 +761,9 @@ mod tests {
         assert_eq!(best_target(1).name, "man/woman");
         assert_eq!(best_target(9).name, "man/woman");
         assert_eq!(best_target(10).name, "farmer");
-        assert_eq!(best_target(99).name, "knight");
+        // The gnome, not the knight: 300 coins a third of the time plus a
+        // guaranteed king worm, and only one hitpoint of stun per failure.
+        assert_eq!(best_target(99).name, "gnome");
     }
 
     #[test]

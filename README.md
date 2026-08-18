@@ -204,9 +204,16 @@ man/woman      1   trout   20   34     50     3142     80%      2498
 man/woman      1  shrimp    1    1    115     3142     46%      1446
 ```
 
-A man's pocket always holds exactly three coins — `pick_pocket_check_for_reward`
-rolls `random(128)` against a denominator his single 128-weight entry drives
-straight to zero — and seven attempts in ten succeed at Thieving 1.
+A man's pocket always holds exactly three coins, and seven attempts in ten
+succeed at Thieving 1. That "always" is worth stating precisely, because the
+reward loop is easy to misread: `pick_pocket_check_for_reward` walks the loot
+entries **backwards** with a denominator that starts at 128 and shrinks by each
+numerator, rolling *every* entry rather than picking one. So the first entry is
+guaranteed whenever the weights sum to 128 — the rogue's coins have numerator
+108 and are certain, not 84% — and a single success can pay several items at
+once. Where the weights sum to *less* than 128 the gap is a dud: the farmer's
+123 means 5 picks in every 128 pay nothing, so 8.65 coins rather than 9.
+`gamebot/README.md` has the full table and the twelve ways an attempt can end.
 
 The interesting column is `uptime`. A failure stuns for eight ticks and takes a
 hitpoint, which works out at **434 damage an hour** against **60** of passive

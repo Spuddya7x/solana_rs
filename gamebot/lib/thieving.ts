@@ -164,3 +164,107 @@ export function healingNeeded(target: Target, level: number, minutes: number): n
     const hours = minutes / 60;
     return Math.max(0, (damagePerHour(target, level) - 60) * hours);
 }
+
+/**
+ * Every way one pickpocket attempt can end.
+ *
+ * Enumerated from the script rather than from the happy path, because a bot
+ * that only knows "coins went up" reads six different refusals as the same
+ * silent nothing and hammers the NPC forever.
+ *
+ * The order below is the order `attempt_pick_pocket` and `~pick_pocket` test
+ * them in, and every one is reachable:
+ *
+ * | outcome | where | costs a hitpoint? | retry? |
+ * | --- | --- | --- | --- |
+ * | `members-only` | `map_members = false` | no | never |
+ * | `unknown-target` | no dbrow for the npc | no | never |
+ * | `level-too-low` | `stat(thieving) < level` | no | not until levelled |
+ * | `quest-locked` | `%viking < ^viking_complete` | no | never |
+ * | `in-combat` | `%lastcombat + 8 > map_clock` | no | after 8 ticks |
+ * | `stunned` | `%stunned > map_clock` | no | after the stun |
+ * | `too-soon` | `%action_delay > map_clock` | no | it re-queues itself |
+ * | `target-dead` | `npc_stat(hitpoints) = 0` | no | pick another |
+ * | `random-event` | `afk_event = true` | no | deal with the event |
+ * | `failed` | the roll missed | **yes** | after the stun |
+ * | `success` | the roll hit | no | immediately |
+ * | `died` | the stun took the last hitpoint | fatal | no |
+ *
+ * `too-soon` is the one that looks like a bug and is not: the script calls
+ * `p_opnpc(3)` and returns, so the engine retries the attempt by itself. A bot
+ * that re-sends on seeing it doubles its own send rate for no gain.
+ */
+export type Outcome =
+    | 'success'
+    | 'failed'
+    | 'died'
+    | 'stunned'
+    | 'too-soon'
+    | 'in-combat'
+    | 'target-dead'
+    | 'level-too-low'
+    | 'quest-locked'
+    | 'members-only'
+    | 'unknown-target'
+    | 'random-event'
+    | 'inventory-full'
+    | 'unknown';
+
+/** Outcomes that mean "stop thieving entirely" rather than "try again". */
+export const FATAL_OUTCOMES: readonly Outcome[] = [
+    'died',
+    'members-only',
+    'level-too-low',
+    'quest-locked',
+    'unknown-target',
+    'random-event',
+    'inventory-full',
+];
+
+/**
+ * Classify an attempt from the messages the engine emitted and the hitpoints
+ * before and after.
+ *
+ * Message-first, because the engine is explicit about every refusal; hitpoints
+ * are only the tie-break for the two cases that share a message shape. The
+ * messages are matched loosely — `<$pocket>` interpolates the target's name, so
+ * "You pick the man's pocket." and "You pick the farmer's pocket." are one case.
+ */
+export function classify(
+    messages: readonly string[],
+    hp: { before: number; after: number },
+): Outcome {
+    const text = messages.join('\n').toLowerCase();
+
+    if (hp.after <= 0) return 'died';
+    if (/you pick the .*pocket/.test(text)) return 'success';
+    if (/you fail to pick the .*pocket|you've been stunned/.test(text)) return 'failed';
+    if (/too late, they're dead/.test(text)) return 'target-dead';
+    if (/can't pickpocket during combat/.test(text)) return 'in-combat';
+    if (/need level \d+ thieving/.test(text)) return 'level-too-low';
+    if (/too suspicious of you/.test(text)) return 'quest-locked';
+    if (/members|member's object/.test(text)) return 'members-only';
+    if (/you can't carry any more|inventory is full/.test(text)) return 'inventory-full';
+
+    // No message and a hitpoint gone is still a failure: the stun text can be
+    // clipped when several land in one frame.
+    if (hp.after < hp.before) return 'failed';
+    return 'unknown';
+}
+
+/** NPCs the engine spawns for a random event, which a thieving bot must not ignore. */
+export const RANDOM_EVENT_NPCS =
+    /^(mysterious old man|dwarf|genie|swarm|evil chicken|river troll|tree spirit|shade|zombie|drunken dwarf|rock golem|sandwich lady|freaky forester|frog|gravedigger|maze guardian|mime|pillory guard|security guard|strange plant|watchman)$/i;
+
+/**
+ * Whether a random event has attached itself to the account.
+ *
+ * `NODE_RANDOM_EVENTS` defaults to false, so on a stock world this never fires.
+ * It matters where it is on: `macro_event_general_spawn` can roll the maze and
+ * cube events, which *teleport the character away*, and `%macro_event > 0`
+ * then blocks every future event until it is resolved. An unattended bot that
+ * ignores this wakes up somewhere else with its run ruined.
+ */
+export function randomEventNearby(npcs: readonly { name: string }[]): string | null {
+    return npcs.find((n) => RANDOM_EVENT_NPCS.test(n.name))?.name ?? null;
+}

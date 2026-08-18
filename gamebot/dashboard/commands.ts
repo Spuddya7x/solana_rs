@@ -33,6 +33,7 @@ import { bestClusters, respawnSeconds } from '../lib/money/loot-run';
 import { sellPriceFor, willBuy } from '../lib/money/pricing';
 import { TARGETS, damagePerHour, healingNeeded, hitpointFloor, successChance } from '../lib/thieving';
 import { SHRIMP_HEAL, SHRIMP_SPOT, TREE } from '../lib/forage';
+import { FATAL_OUTCOMES as FATAL, classify, randomEventNearby, type Outcome } from '../lib/thieving';
 import type { Session } from './stats';
 
 /** What a command needs from the connection to be allowed to run. */
@@ -44,6 +45,8 @@ export interface CommandContext {
     session: Session;
     /** Live world state, when a frame has arrived. */
     state: Worldish | null;
+    /** Await the next frame, so an action can be judged on fresh state. */
+    settle?: (ticks: number) => Promise<Worldish | null>;
     /** Current connection mode. */
     mode: Needs;
     /** Send a chat message. Observers may do this; nothing else. */
@@ -52,6 +55,23 @@ export interface CommandContext {
     takeControl?: () => Promise<void>;
     /** Drop back to observe. */
     release?: () => Promise<void>;
+    /** Actions, present only once the connection holds control. */
+    act?: Actions;
+}
+
+/**
+ * The slice of `BotActions` the console drives.
+ *
+ * Structural rather than the class itself, so the command tests can exercise
+ * every branch — including the failures — without a gateway.
+ */
+export interface Actions {
+    walkTo: (x: number, z: number) => Promise<{ success: boolean; message?: string }>;
+    interactNpc: (
+        target: string | RegExp,
+        option: string | RegExp,
+    ) => Promise<{ success: boolean; message?: string }>;
+    eatFood: (target: string | RegExp) => Promise<{ success: boolean; message?: string }>;
 }
 
 /** The parts of `BotWorldState` the console reads, kept structural for tests. */
@@ -61,6 +81,9 @@ export interface Worldish {
     nearbyNpcs?: { name: string; x: number; z: number }[];
     nearbyLocs?: { name: string; x: number; z: number }[];
     groundItems?: { name: string; x: number; z: number; count?: number }[];
+    /** Newest last, as the engine publishes them. */
+    gameMessages?: { text: string }[];
+    inventory?: { name: string; count: number }[];
 }
 
 export interface Command {
@@ -89,6 +112,11 @@ const tilesFrom = (a: { x: number; z: number }, b: { x: number; z: number }) =>
 function requireState(ctx: CommandContext): Worldish {
     if (!ctx.state) throw new Error('no world state yet — is the bot logged in?');
     return ctx.state;
+}
+
+/** Coins carried, from whichever frame is current. */
+function coinsIn(state: Worldish | null): number {
+    return state?.inventory?.find((i) => /^coins$/i.test(i.name))?.count ?? 0;
 }
 
 function matcher(args: string[]): RegExp | null {
@@ -378,6 +406,97 @@ export const COMMANDS: Command[] = [
         },
     },
     {
+        name: 'walk',
+        usage: 'walk <x> <z>',
+        summary: 'Walk to a tile, handling doors on the way',
+        needs: 'control',
+        async run(args, ctx) {
+            const x = Number(args[0]);
+            const z = Number(args[1]);
+            if (!Number.isFinite(x) || !Number.isFinite(z)) return 'usage: walk <x> <z>';
+            if (!ctx.act) return 'no action channel on this connection';
+            const from = ctx.state?.player;
+            const result = await ctx.act.walkTo(x, z);
+            const to = (await ctx.settle?.(2))?.player ?? ctx.state?.player;
+            const moved = from && to ? tilesFrom(from, to) : 0;
+            if (!result.success) return `walk failed: ${result.message ?? 'unknown'} (moved ${moved}t)`;
+            const short = to ? tilesFrom(to, { x, z }) : 0;
+            // `walkTo` reports success on arriving *near enough*, so say where
+            // it actually stopped rather than implying the tile was reached.
+            return to
+                ? `at (${to.x},${to.z}) after ${moved}t` + (short > 0 ? ` — ${short}t short of the target` : '')
+                : 'walk sent; no position frame came back';
+        },
+    },
+    {
+        name: 'pickpocket',
+        usage: 'pickpocket [pattern] [count]',
+        summary: 'Pick a pocket and report which of the twelve outcomes it was',
+        needs: 'control',
+        async run(args, ctx) {
+            if (!ctx.act) return 'no action channel on this connection';
+            const pattern = args[0] ? new RegExp(args[0], 'i') : /^(man|woman)$/i;
+            const count = Math.min(Number(args[1]) || 1, 25);
+
+            const tally = new Map<Outcome, number>();
+            const lines: string[] = [];
+            let coinsBefore = coinsIn(ctx.state);
+
+            for (let attempt = 0; attempt < count; attempt++) {
+                const before = ctx.state?.player?.hp ?? 0;
+                const seen = ctx.state?.gameMessages?.length ?? 0;
+
+                const event = randomEventNearby(ctx.state?.nearbyNpcs ?? []);
+                if (event) {
+                    lines.push(`stopped: '${event}' is a random event NPC — it can teleport the account away`);
+                    tally.set('random-event', (tally.get('random-event') ?? 0) + 1);
+                    break;
+                }
+
+                const result = await ctx.act.interactNpc(pattern, /pickpocket/i);
+                // A failure stuns for eight ticks; wait past it before reading,
+                // or the next attempt reads the previous one's messages.
+                const after = await ctx.settle?.(9);
+                const messages = (after?.gameMessages ?? []).slice(seen).map((m) => m.text);
+                const outcome: Outcome = result.success
+                    ? classify(messages, { before, after: after?.player?.hp ?? before })
+                    : classify(messages.concat(result.message ?? ''), { before, after: after?.player?.hp ?? before });
+
+                tally.set(outcome, (tally.get(outcome) ?? 0) + 1);
+                if (FATAL.includes(outcome)) {
+                    lines.push(`stopped on '${outcome}' — retrying will not help`);
+                    break;
+                }
+            }
+
+            const gained = coinsIn(ctx.state) - coinsBefore;
+            const summary = [...tally.entries()].map(([o, n]) => `${o} x${n}`).join(', ');
+            return [`${summary || 'nothing happened'}`, `${gained >= 0 ? '+' : ''}${num(gained)} gp`, ...lines].join('\n');
+        },
+    },
+    {
+        name: 'eat',
+        usage: 'eat [food]',
+        summary: 'Eat something, and say how many hitpoints it actually gave',
+        needs: 'control',
+        async run(args, ctx) {
+            if (!ctx.act) return 'no action channel on this connection';
+            const pattern = args[0] ? new RegExp(args[0], 'i') : /^shrimps$/i;
+            const before = ctx.state?.player;
+            if (before && before.hp >= before.maxHp) {
+                return `already at ${before.hp}/${before.maxHp} — eating would waste it`;
+            }
+            const result = await ctx.act.eatFood(pattern);
+            const after = (await ctx.settle?.(3))?.player;
+            if (!result.success) return `eat failed: ${result.message ?? 'nothing matched'}`;
+            if (!before || !after) return 'ate; no hitpoint frame came back';
+            const healed = after.hp - before.hp;
+            // Healing is capped at max, so a full-value food eaten near the top
+            // returns less than its listing. Report what landed, not what it pays.
+            return `${before.hp} -> ${after.hp}/${after.maxHp} hp (+${healed})`;
+        },
+    },
+    {
         name: 'help',
         usage: 'help [command]',
         summary: 'What this console can do',
@@ -395,7 +514,10 @@ export const COMMANDS: Command[] = [
                     const rows = COMMANDS.filter((c) => c.needs === needs && c.name !== 'help');
                     if (!rows.length) return '';
                     const gated = permits(ctx.mode, needs) ? '' : '  (unavailable in observe mode)';
-                    return `${title}${gated}\n` + rows.map((c) => `  ${pad(c.usage, 22)}${c.summary}`).join('\n');
+                    // Wide enough for the longest usage line; `pad` only pads,
+                    // so a short column silently runs the summary into it.
+                    const width = Math.max(...COMMANDS.map((c) => c.usage.length)) + 2;
+                    return `${title}${gated}\n` + rows.map((c) => `  ${pad(c.usage, width)}${c.summary}`).join('\n');
                 })
                 .filter(Boolean)
                 .join('\n\n');

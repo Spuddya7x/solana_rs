@@ -8,6 +8,9 @@ import {
     hitpointFloor,
     statRandom,
     successChance,
+    FATAL_OUTCOMES,
+    classify,
+    randomEventNearby,
 } from './thieving';
 import { SHRIMP_HEAL } from './forage';
 
@@ -95,5 +98,66 @@ describe('sizing a forage trip', () => {
 
     test('a zero-length session needs no food', () => {
         expect(healingNeeded(MAN, 1, 0)).toBe(0);
+    });
+});
+
+describe('classifying an attempt', () => {
+    const hp = (before: number, after: number) => ({ before, after });
+
+    test('a success is the pocket message, whoever it belonged to', () => {
+        expect(classify(["You pick the man's pocket."], hp(10, 10))).toBe('success');
+        expect(classify(["You pick the farmer's pocket."], hp(10, 10))).toBe('success');
+        expect(classify(["You pick the knight's pocket."], hp(10, 10))).toBe('success');
+    });
+
+    test('a failure is recognised from either half of the stun', () => {
+        expect(classify(["You fail to pick the man's pocket."], hp(10, 9))).toBe('failed');
+        expect(classify(["You've been stunned!"], hp(10, 9))).toBe('failed');
+    });
+
+    test('death outranks everything, including a success in the same frame', () => {
+        // The stun that kills still prints its messages; hitpoints decide.
+        expect(classify(["You pick the man's pocket."], hp(1, 0))).toBe('died');
+    });
+
+    test('each refusal is distinguished from the others', () => {
+        expect(classify(["Too late, they're dead."], hp(10, 10))).toBe('target-dead');
+        expect(classify(["You can't pickpocket during combat."], hp(10, 10))).toBe('in-combat');
+        expect(classify(['You need level 10 thieving to pick the pocket.'], hp(10, 10))).toBe('level-too-low');
+        expect(classify(['They are too suspicious of you for you to get close enough.'], hp(10, 10))).toBe(
+            'quest-locked',
+        );
+        expect(classify(["You can't carry any more."], hp(10, 10))).toBe('inventory-full');
+    });
+
+    test('a lost hitpoint with no message is still a failure', () => {
+        // Several stuns landing in one published frame can clip the text.
+        expect(classify([], hp(10, 9))).toBe('failed');
+    });
+
+    test('silence with no damage is unknown, not success', () => {
+        // `too-soon` returns silently and re-queues itself; reading that as a
+        // success would inflate every rate the dashboard reports.
+        expect(classify([], hp(10, 10))).toBe('unknown');
+    });
+
+    test('the fatal set is exactly the outcomes retrying cannot fix', () => {
+        expect(FATAL_OUTCOMES).toContain('died');
+        expect(FATAL_OUTCOMES).toContain('level-too-low');
+        expect(FATAL_OUTCOMES).toContain('inventory-full');
+        // These three resolve on their own and must stay retryable.
+        expect(FATAL_OUTCOMES).not.toContain('failed');
+        expect(FATAL_OUTCOMES).not.toContain('stunned');
+        expect(FATAL_OUTCOMES).not.toContain('in-combat');
+    });
+});
+
+describe('random events', () => {
+    test('spots an event NPC among ordinary ones', () => {
+        expect(randomEventNearby([{ name: 'Man' }, { name: 'Mysterious old man' }])).toBe('Mysterious old man');
+    });
+
+    test('ignores a crowd with no event in it', () => {
+        expect(randomEventNearby([{ name: 'Man' }, { name: 'Farmer' }, { name: 'Woman' }])).toBeNull();
     });
 });

@@ -736,7 +736,7 @@ fn thieve_plan(args: &ThievePlanArgs) {
         args.thieving,
         now.name,
         now.success(args.thieving) * 100.0,
-        now.coins
+        now.coins()
     );
     println!(
         "and the rest cost {} hitpoint(s) and {} ticks of stun. That is {:.0} damage an hour",
@@ -757,7 +757,13 @@ fn thieve_plan(args: &ThievePlanArgs) {
             p.hp_per_1000_gp(p.level)
         );
     }
-    println!("\nOnly men, farmers and warriors are near Lumbridge; knights are Ardougne.");
+    println!(
+        "\nCoins only. A pick rolls *every* loot row, so a rogue can also pay air runes, wine,"
+    );
+    println!(
+        "a lockpick or a poisoned dagger in the same attempt, and a gnome always pays a worm."
+    );
+    println!("Only men, farmers and warriors are near Lumbridge; the rest need a long walk.");
 }
 
 fn scarcity(cli: &Cli, args: &ScarcityArgs) -> Result<()> {

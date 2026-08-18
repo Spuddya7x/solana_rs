@@ -226,3 +226,143 @@ describe('help', () => {
         }
     });
 });
+
+describe('control-tier actions', () => {
+    /** A fake action channel plus the frames it produces, so every branch is reachable. */
+    function acting(over: {
+        walk?: () => { success: boolean; message?: string };
+        interact?: () => { success: boolean; message?: string };
+        eat?: () => { success: boolean; message?: string };
+        frames?: Partial<import('./commands').Worldish>[];
+        start?: Partial<import('./commands').Worldish>;
+    }) {
+        const base = {
+            tick: 1,
+            player: { name: 'b', x: 3222, z: 3218, level: 0, hp: 10, maxHp: 10 },
+            nearbyNpcs: [{ name: 'Man', x: 3221, z: 3219 }],
+            gameMessages: [] as { text: string }[],
+            inventory: [{ name: 'Coins', count: 100 }],
+        };
+        let current = { ...base, ...over.start } as import('./commands').Worldish;
+        const queue = [...(over.frames ?? [])];
+        const calls: string[] = [];
+        const ctx = context({
+            mode: 'control',
+            state: current,
+            settle: async () => {
+                const next = queue.shift();
+                if (next) current = { ...current, ...next } as import('./commands').Worldish;
+                ctx.state = current;
+                return current;
+            },
+            act: {
+                walkTo: async (x, z) => (calls.push(`walk ${x} ${z}`), over.walk?.() ?? { success: true }),
+                interactNpc: async () => (calls.push('interact'), over.interact?.() ?? { success: true }),
+                eatFood: async () => (calls.push('eat'), over.eat?.() ?? { success: true }),
+            },
+        });
+        return { ctx, calls };
+    }
+
+    test('walk reports where it actually stopped, not where it was aimed', async () => {
+        // walkTo succeeds on arriving near enough, so saying "arrived" would lie.
+        const { ctx } = acting({
+            frames: [{ player: { name: 'b', x: 3230, z: 3218, level: 0, hp: 10, maxHp: 10 } }],
+        });
+        const result = await execute('walk 3232 3218', ctx);
+        expect(result.output).toContain('(3230,3218)');
+        expect(result.output).toContain('2t short');
+    });
+
+    test('walk rejects a non-numeric tile before sending anything', async () => {
+        const { ctx, calls } = acting({});
+        expect((await execute('walk here', ctx)).output).toContain('usage:');
+        expect(calls).toEqual([]);
+    });
+
+    test('walk surfaces a failure with the distance covered', async () => {
+        const { ctx } = acting({ walk: () => ({ success: false, message: 'blocked' }) });
+        const result = await execute('walk 3300 3300', ctx);
+        expect(result.output).toContain('blocked');
+    });
+
+    test('pickpocket names the outcome rather than just counting coins', async () => {
+        const { ctx } = acting({
+            frames: [{ gameMessages: [{ text: "You pick the man's pocket." }] }],
+        });
+        const result = await execute('pickpocket man 1', ctx);
+        expect(result.output).toContain('success x1');
+    });
+
+    test('pickpocket stops on a fatal outcome instead of hammering', async () => {
+        const { ctx, calls } = acting({
+            frames: [
+                { gameMessages: [{ text: 'You need level 10 thieving to pick the pocket.' }] },
+                { gameMessages: [{ text: 'You need level 10 thieving to pick the pocket.' }] },
+            ],
+        });
+        const result = await execute('pickpocket farmer 5', ctx);
+        expect(result.output).toContain('level-too-low');
+        expect(result.output).toContain('retrying will not help');
+        expect(calls.filter((c) => c === 'interact')).toHaveLength(1);
+    });
+
+    test('pickpocket refuses to start next to a random event NPC', async () => {
+        // The maze and cube events teleport the account away; walking into one
+        // unattended ruins the run.
+        const { ctx, calls } = acting({
+            start: { nearbyNpcs: [{ name: 'Mysterious old man', x: 3222, z: 3218 }] },
+        });
+        const result = await execute('pickpocket man 5', ctx);
+        expect(result.output).toContain('random event');
+        expect(calls).toEqual([]);
+    });
+
+    test('pickpocket caps the count so one line cannot run forever', async () => {
+        const { ctx, calls } = acting({
+            frames: Array.from({ length: 40 }, () => ({ gameMessages: [{ text: "You pick the man's pocket." }] })),
+        });
+        await execute('pickpocket man 999', ctx);
+        expect(calls.filter((c) => c === 'interact').length).toBeLessThanOrEqual(25);
+    });
+
+    test('eat reports the hitpoints that landed, not the food listing', async () => {
+        // Healing clips at max, so a 3 hp shrimp eaten at 9/10 gives 1.
+        const { ctx } = acting({
+            start: { player: { name: 'b', x: 0, z: 0, level: 0, hp: 9, maxHp: 10 } },
+            frames: [{ player: { name: 'b', x: 0, z: 0, level: 0, hp: 10, maxHp: 10 } }],
+        });
+        const result = await execute('eat shrimps', ctx);
+        expect(result.output).toContain('9 -> 10/10 hp (+1)');
+    });
+
+    test('eat refuses at full hitpoints rather than wasting the food', async () => {
+        const { ctx, calls } = acting({});
+        const result = await execute('eat', ctx);
+        expect(result.output).toContain('would waste it');
+        expect(calls).toEqual([]);
+    });
+
+    test('eat surfaces having nothing to eat', async () => {
+        const { ctx } = acting({
+            start: { player: { name: 'b', x: 0, z: 0, level: 0, hp: 4, maxHp: 10 } },
+            eat: () => ({ success: false, message: 'no shrimps in inventory' }),
+        });
+        expect((await execute('eat shrimps', ctx)).output).toContain('no shrimps');
+    });
+
+    test('none of the three run without an action channel', async () => {
+        for (const line of ['walk 1 1', 'pickpocket', 'eat']) {
+            const result = await execute(line, context({ mode: 'control' }));
+            expect(result.output).toContain('no action channel');
+        }
+    });
+
+    test('none of the three run from an observer', async () => {
+        for (const line of ['walk 1 1', 'pickpocket', 'eat']) {
+            const result = await execute(line, context({ mode: 'observe' }));
+            expect(result.ok).toBe(false);
+            expect(result.output).toContain('needs control');
+        }
+    });
+});

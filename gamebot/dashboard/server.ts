@@ -29,6 +29,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { BotActions } from '../../../sdk/actions';
 import { BotSDK, deriveGatewayUrl } from '../../../sdk/index';
 import { execute, type CommandContext, type Needs, type Worldish } from './commands';
 import { SessionTracker, type StateFrame } from './stats';
@@ -104,6 +105,9 @@ const sdk = new BotSDK({
 /** The last raw frame, for the console's nearby-scan commands. */
 let latest: Worldish | null = null;
 
+/** Bound once; only reachable from a command while `mode` is `control`. */
+const actions = new BotActions(sdk);
+
 sdk.onStateUpdate((state) => {
     tracker.push(state as unknown as StateFrame);
     latest = state as unknown as Worldish;
@@ -131,6 +135,13 @@ async function run(line: string): Promise<{ ok: boolean; output: string; mode: N
         session: tracker.snapshot(),
         state: latest,
         mode,
+        settle: async (ticks) => {
+            await sdk.waitForReady(ticks);
+            return latest;
+        },
+        // Only handed over while the connection actually holds control, so a
+        // command that slipped past the gate still has nothing to act with.
+        act: mode === 'control' ? actions : undefined,
         say: async (message) => {
             await sdk.say(message);
         },

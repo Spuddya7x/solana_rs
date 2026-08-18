@@ -227,7 +227,7 @@ handlers, so a new command cannot forget it.
 | --- | --- | --- |
 | **Planning** | nothing at all | `thieve`, `forage`, `shop`, `spawns`, `safespots`, `help` |
 | **Live** | an observer | `skills`, `inv`, `where`, `npcs`, `locs`, `ground`, `log`, `say` |
-| **Control** | the character | `control`, `release` |
+| **Control** | the character | `control`, `release`, `walk`, `pickpocket`, `eat` |
 
 Planning commands are the numbers `mercbot` prints, without leaving the window
 or having a game attached: `thieve 12` gives the pickpocket table at that level,
@@ -244,6 +244,97 @@ in control mode disconnects whatever is driving the bot, and it does not come
 back on its own. So `control` refuses on the first attempt and explains; only
 `control --force` escalates. `release` drops back to observing and says plainly
 that the evicted script is still gone and needs restarting.
+
+### What a pickpocket actually grants
+
+`pick_pocket_check_for_reward` is **not** a pick-one table, and reading it as one
+gets the numbers wrong. It walks the `loot` entries **backwards** with a
+denominator that starts at 128 and shrinks by each numerator as it goes:
+
+```
+$roll = random($denominator)          // the denominator *before* the subtraction
+$denominator = $denominator - $numerator
+if ($roll >= $denominator) { inv_add(...) }   // no return — the loop continues
+```
+
+Three consequences, all of which cost me a correction:
+
+* **One success can grant several items.** There is no `return` after a hit,
+  unlike the stall table's `stealing_check_for_reward`. A rogue can pay coins
+  *and* air runes *and* wine in a single pick.
+* **The dbrow's first entry is usually guaranteed**, because the numerators sum
+  to 128 and drive the denominator to zero. The rogue's coins have numerator
+  108, which reads like 84% and is actually **certain** — I had priced the rogue
+  16% low.
+* **Unless the weights sum to less than 128.** The farmer's single entry is
+  **123**, so 5 successful picks in every 128 pay *nothing*. That is 8.65 coins
+  a pick, not 9.
+
+| target | level | per success | extras |
+| --- | ---: | --- | --- |
+| man/woman | 1 | 3 gp, always | — |
+| farmer | 10 | 9 gp, 96.1% of the time | — |
+| warrior | 25 | 18 gp, always | — |
+| rogue | 32 | 25–40 gp, always | air runes 6.9%, wine 4.9%, lockpick 3.9%, poisoned iron dagger 0.8% |
+| guard | 40 | 30 gp, always | — |
+| fremennik | 45 | 40 gp, always | — |
+| knight | 55 | 50 gp, always | — |
+| watchman | 65 | 60 gp, always | bread, always |
+| paladin | 70 | 80 gp, always | 2 chaos runes, always |
+| gnome | 75 | 300 gp, **35.3%** | king worm always, toad 24.8%, gold ore 6.6%, earth rune 4.0%, fire orb 1.6% |
+| hero | 80 | 200–300 gp, always | 2 death runes 7.1%, wine 5.0%, blood rune 4.0%, fire orb 1.6%, diamond 0.8%, gold ore 0.8% |
+
+The gnome is the odd one: the guaranteed entry is a king worm, and the 300 gp is
+the coin flip. `mercbot thieve-plan` counts coins only, because the runes and
+worms have to be carried home and sold before they are income.
+
+### Every way an attempt can end
+
+`lib/thieving.ts` enumerates twelve outcomes, in the order the script tests
+them. A bot that only checks "did coins go up" reads six different refusals as
+the same silent nothing and hammers the NPC forever.
+
+| outcome | trigger | costs hp? | retry? |
+| --- | --- | --- | --- |
+| `members-only` | `map_members = false` | no | never |
+| `unknown-target` | no dbrow for the npc | no | never |
+| `level-too-low` | `stat(thieving) < level` | no | not until levelled |
+| `quest-locked` | `%viking < ^viking_complete` | no | never |
+| `in-combat` | `%lastcombat + 8 > map_clock` | no | after 8 ticks |
+| `stunned` | `%stunned > map_clock` | no | after the stun |
+| `too-soon` | `%action_delay > map_clock` | no | **it re-queues itself** |
+| `target-dead` | `npc_stat(hitpoints) = 0` | no | pick another |
+| `random-event` | `afk_event = true` | no | deal with the event |
+| `failed` | the roll missed | **yes** | after the stun |
+| `success` | the roll hit | no | immediately |
+| `died` | the stun took the last hitpoint | fatal | no |
+
+`too-soon` looks like a bug and is not: the script calls `p_opnpc(3)` and
+returns, so the engine retries by itself. Re-sending on it doubles the send rate
+for nothing. `classify()` distinguishes all of them from the game messages, with
+hitpoints as the tie-break — and deliberately returns `unknown` rather than
+`success` for silence, since counting silence as a pick would inflate every rate
+on the dashboard.
+
+**Random events default to off** (`NODE_RANDOM_EVENTS=false`), but where they are
+on they matter: `macro_event_general_spawn` can roll the maze and cube events,
+which *teleport the character away*, and `%macro_event > 0` then blocks every
+future event until it is resolved. `pickpocket` refuses to start next to a known
+event NPC rather than walking into that unattended.
+
+### The three actions
+
+`walk`, `pickpocket` and `eat` are control-tier, so they need `control --force`
+first. Each reports what actually happened rather than what was asked for:
+
+* `walk <x> <z>` — `walkTo` succeeds on arriving *near enough*, so this prints
+  where it stopped and how far short it is, rather than claiming arrival.
+* `pickpocket [pattern] [count]` — names which of the twelve outcomes each
+  attempt was, stops on a fatal one instead of hammering, and caps at 25 so one
+  line cannot run away.
+* `eat [food]` — healing clips at max, so a 3 hp shrimp eaten at 9/10 gives 1.
+  This prints the hitpoints that landed, not the food's listing, and refuses at
+  full health rather than wasting it.
 
 The same dispatcher is on an HTTP endpoint, so a shell can drive it too:
 
