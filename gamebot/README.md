@@ -91,12 +91,39 @@ bun bots/<name>/moneymaker.ts --target 20000
 `lib/money/pricing.ts` mirrors the Rust `shops` module, and both port
 `shop.rs2` exactly. The two facts that matter:
 
-* Shops pay `cost x multiplier / 1000`, multipliers being 600–950, against a
-  pool floor of 36% of cost — so an item bought on chain and sold at a counter
-  returns the alchemy margin with no Magic level at all. `mercbot shop-flip`
-  ranks that; `moneymaker.ts` walks it.
+* Shops pay `cost x multiplier / 1000`. A **specialist** counter — one that
+  deals in the item — uses 600–950, against a pool floor of 36% of cost, so an
+  item bought on chain and sold there returns the alchemy margin with no Magic
+  level at all. Every reachable **general store** uses 400, which is 40% of cost
+  and only 11% over the floor. `mercbot shop-flip` ranks the former; the latter
+  is for dumping loot.
 * The price falls as you sell and rises when the shop is depleted, because
   `diff = current + sold - base`. Planning assumes base stock, which is neutral.
+  At `haggle = 30` a general store's 11% is gone inside three units.
+
+### Getting there
+
+Only **64 of the 117 shops** are reachable by a fresh account walking from
+Lumbridge. `tools/build-money.ts` establishes this with the game's own
+pathfinder and stamps every shop with `accessible`, `barrier` and `walkTiles`;
+`pickShop` drops the rest before it ranks anything.
+
+| Barrier | Shops |
+| --- | ---: |
+| `unreachable` (water, off-graph) | 30 |
+| `upstairs` (level > 0) | 14 |
+| `quest: viking` | 6 |
+| `gated: fishing 68` / `quest: dragonquest` / `quest: mcannon` | 3 |
+
+Two gate mechanisms exist and both need checking. Most gates are **doors** —
+`[oploc1,…]` handlers that test a quest or a stat before opening. The Fremennik
+shops have no such door: the shopkeeper's own `[opnpc…]` script checks
+`%viking < ^viking_complete`, so a door-only scan sends the bot a thousand tiles
+to Rellekka to meet a merchant who will not trade with it.
+
+`pickShop` ranks by **value per hour**, not value: the Ardougne fur stall pays
+95% of cost but is 861 tiles out, and a ten-minute round trip only wins if it
+pays more than five times as much as a two-minute one.
 
 ## Safespots
 

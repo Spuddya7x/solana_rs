@@ -3,7 +3,7 @@ export const DEFAULT_RESPAWN_TICKS = 100;
 
 export interface SpawnItem { item: string; cost: number; x: number; z: number; respawnTicks: number }
 export interface SpawnCluster { level: number; x: number; z: number; value: number; items: SpawnItem[] }
-export interface Shop { npc: string; title: string; buyMultiplier: number; haggle: number; level: number; x: number; z: number; stock: Record<string, number>; buysAnything: boolean; safe: boolean }
+export interface Shop { npc: string; title: string; buyMultiplier: number; haggle: number; level: number; x: number; z: number; stock: Record<string, number>; buysAnything: boolean; safe: boolean; accessible: boolean; barrier: string | null; walkTiles: number | null }
 
 export const SPAWN_CLUSTERS: SpawnCluster[] = [
  {
@@ -285,7 +285,10 @@ export const SHOPS: Shop[] = [
    "grey_wolf_fur": 3
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "quest: viking",
+  "walkTiles": 992
  },
  {
   "npc": "fur_merchant",
@@ -300,7 +303,10 @@ export const SHOPS: Shop[] = [
    "grey_wolf_fur": 3
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 861
  },
  {
   "npc": "davon",
@@ -318,7 +324,10 @@ export const SHOPS: Shop[] = [
    "amulet_of_power": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "bedabin",
@@ -337,7 +346,10 @@ export const SHOPS: Shop[] = [
    "knife": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "baker_merchant",
@@ -353,7 +365,10 @@ export const SHOPS: Shop[] = [
    "chocolate_slice": 8
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 859
  },
  {
   "npc": "gem_merchant",
@@ -370,7 +385,10 @@ export const SHOPS: Shop[] = [
    "diamond": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 856
  },
  {
   "npc": "tbwt_tamayu_final",
@@ -390,7 +408,10 @@ export const SHOPS: Shop[] = [
    "tbwt_cleaning_cloth": 10
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "alfonse_the_waiter",
@@ -408,7 +429,10 @@ export const SHOPS: Shop[] = [
    "swordfish": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "herquin",
@@ -429,7 +453,10 @@ export const SHOPS: Shop[] = [
    "diamond": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 357
  },
  {
   "npc": "shilofishowner",
@@ -449,7 +476,10 @@ export const SHOPS: Shop[] = [
    "raw_salmon": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "gerrant",
@@ -479,7 +509,10 @@ export const SHOPS: Shop[] = [
    "raw_swordfish": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 275
  },
  {
   "npc": "grum",
@@ -507,7 +540,10 @@ export const SHOPS: Shop[] = [
    "strung_diamond_amulet": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 254
  },
  {
   "npc": "wydin",
@@ -531,7 +567,10 @@ export const SHOPS: Shop[] = [
    "potato": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 283
  },
  {
   "npc": "werewolfshopkeeper1",
@@ -552,7 +591,10 @@ export const SHOPS: Shop[] = [
    "raw_shark": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "jatix",
@@ -568,7 +610,10 @@ export const SHOPS: Shop[] = [
    "eye_of_newt": 800
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 444
  },
  {
   "npc": "fishguildshop",
@@ -595,7 +640,10 @@ export const SHOPS: Shop[] = [
    "swordfish": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "gated: fishing 68",
+  "walkTiles": 884
  },
  {
   "npc": "shantay",
@@ -624,7 +672,10 @@ export const SHOPS: Shop[] = [
    "shantay_pass": 500
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 153
  },
  {
   "npc": "gem_trader",
@@ -645,7 +696,10 @@ export const SHOPS: Shop[] = [
    "diamond": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 68
  },
  {
   "npc": "viking_clothing_shopkeeper",
@@ -679,7 +733,10 @@ export const SHOPS: Shop[] = [
    "viking_cloak_black": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "quest: viking",
+  "walkTiles": 1006
  },
  {
   "npc": "viking_fish_monger",
@@ -714,7 +771,10 @@ export const SHOPS: Shop[] = [
    "raw_shark": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "quest: viking",
+  "walkTiles": 992
  },
  {
   "npc": "viking_longhall_barkeep",
@@ -730,7 +790,10 @@ export const SHOPS: Shop[] = [
    "keg_of_beer": 20
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "quest: viking",
+  "walkTiles": 992
  },
  {
   "npc": "viking_weapons_salesman",
@@ -754,7 +817,10 @@ export const SHOPS: Shop[] = [
    "viking_helmet_magic": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "quest: viking",
+  "walkTiles": 1013
  },
  {
   "npc": "silver_merchant",
@@ -770,7 +836,10 @@ export const SHOPS: Shop[] = [
    "silver_bar": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 870
  },
  {
   "npc": "zambo",
@@ -786,7 +855,10 @@ export const SHOPS: Shop[] = [
    "jug_wine": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "drogo",
@@ -808,7 +880,10 @@ export const SHOPS: Shop[] = [
    "gold_bar": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "frincos",
@@ -824,7 +899,10 @@ export const SHOPS: Shop[] = [
    "eye_of_newt": 50
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "harry",
@@ -854,7 +932,10 @@ export const SHOPS: Shop[] = [
    "raw_shark": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 647
  },
  {
   "npc": "rommik",
@@ -875,7 +956,10 @@ export const SHOPS: Shop[] = [
    "sickle_mould": 6
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 322
  },
  {
   "npc": "wayne",
@@ -894,7 +978,10 @@ export const SHOPS: Shop[] = [
    "adamant_chainbody": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 317
  },
  {
   "npc": "ranael",
@@ -913,7 +1000,10 @@ export const SHOPS: Shop[] = [
    "adamant_plateskirt": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 113
  },
  {
   "npc": "louie_legs",
@@ -932,7 +1022,10 @@ export const SHOPS: Shop[] = [
    "adamant_platelegs": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 108
  },
  {
   "npc": "dommik",
@@ -953,7 +1046,10 @@ export const SHOPS: Shop[] = [
    "sickle_mould": 6
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 102
  },
  {
   "npc": "flynn",
@@ -971,7 +1067,10 @@ export const SHOPS: Shop[] = [
    "adamant_mace": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 371
  },
  {
   "npc": "cassie",
@@ -992,7 +1091,10 @@ export const SHOPS: Shop[] = [
    "mithril_sq_shield": 0
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 361
  },
  {
   "npc": "magic_store_owner",
@@ -1022,7 +1124,10 @@ export const SHOPS: Shop[] = [
    "deathrune": 1000
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "betty",
@@ -1046,7 +1151,10 @@ export const SHOPS: Shop[] = [
    "blackwizhat": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 250
  },
  {
   "npc": "gaius",
@@ -1065,7 +1173,10 @@ export const SHOPS: Shop[] = [
    "adamant_2h_sword": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 465
  },
  {
   "npc": "noterazzo",
@@ -1085,7 +1196,10 @@ export const SHOPS: Shop[] = [
    "bronze_axe": 10
   },
   "buysAnything": true,
-  "safe": false
+  "safe": false,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 541
  },
  {
   "npc": "fat_tony",
@@ -1099,7 +1213,10 @@ export const SHOPS: Shop[] = [
    "pizza_base": 30
   },
   "buysAnything": false,
-  "safe": false
+  "safe": false,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 547
  },
  {
   "npc": "scavvo",
@@ -1121,7 +1238,10 @@ export const SHOPS: Shop[] = [
    "coif": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "jakut",
@@ -1136,7 +1256,10 @@ export const SHOPS: Shop[] = [
    "dragon_dagger": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "swordshop1",
@@ -1167,7 +1290,10 @@ export const SHOPS: Shop[] = [
    "adamant_dagger": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 208
  },
  {
   "npc": "swordshop2",
@@ -1198,7 +1324,10 @@ export const SHOPS: Shop[] = [
    "adamant_dagger": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 205
  },
  {
   "npc": "horvik_the_armourer",
@@ -1223,7 +1352,10 @@ export const SHOPS: Shop[] = [
    "studded_chaps": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 244
  },
  {
   "npc": "peksa",
@@ -1246,7 +1378,10 @@ export const SHOPS: Shop[] = [
    "adamant_full_helm": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 276
  },
  {
   "npc": "nurmof",
@@ -1265,7 +1400,10 @@ export const SHOPS: Shop[] = [
    "rune_pickaxe": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "zenesha",
@@ -1283,7 +1421,10 @@ export const SHOPS: Shop[] = [
    "mithril_platebody": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 873
  },
  {
   "npc": "spice_merchant",
@@ -1297,7 +1438,10 @@ export const SHOPS: Shop[] = [
    "spicespot": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 869
  },
  {
   "npc": "tea_seller",
@@ -1311,7 +1455,10 @@ export const SHOPS: Shop[] = [
    "cup_of_tea": 20
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 253
  },
  {
   "npc": "bob",
@@ -1331,7 +1478,10 @@ export const SHOPS: Shop[] = [
    "mithril_battleaxe": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 27
  },
  {
   "npc": "magearena_runeshop",
@@ -1355,7 +1505,10 @@ export const SHOPS: Shop[] = [
    "deathrune": 250
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "chadwell",
@@ -1381,7 +1534,10 @@ export const SHOPS: Shop[] = [
    "cooked_meat": 10
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "frenita",
@@ -1404,7 +1560,10 @@ export const SHOPS: Shop[] = [
    "pot_flour": 8
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 1104
  },
  {
   "npc": "brian",
@@ -1423,7 +1582,10 @@ export const SHOPS: Shop[] = [
    "adamant_battleaxe": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 241
  },
  {
   "npc": "duel_fadli",
@@ -1437,7 +1599,10 @@ export const SHOPS: Shop[] = [
    "rotten_tomato": 2000
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 179
  },
  {
   "npc": "horror_lighthousekeeeper_well",
@@ -1474,7 +1639,10 @@ export const SHOPS: Shop[] = [
    "wizards_mind_bomb": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "fionella",
@@ -1491,7 +1659,10 @@ export const SHOPS: Shop[] = [
    "steel_arrow": 500
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "helemos",
@@ -1506,7 +1677,10 @@ export const SHOPS: Shop[] = [
    "dragon_mace": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "thessalia",
@@ -1531,7 +1705,10 @@ export const SHOPS: Shop[] = [
    "priest_gown": 3
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 229
  },
  {
   "npc": "lowe",
@@ -1553,7 +1730,10 @@ export const SHOPS: Shop[] = [
    "crossbow": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 242
  },
  {
   "npc": "aubury",
@@ -1574,7 +1754,10 @@ export const SHOPS: Shop[] = [
    "deathrune": 1000
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 237
  },
  {
   "npc": "gnome_hudo",
@@ -1608,7 +1791,10 @@ export const SHOPS: Shop[] = [
    "giannes_cook_book": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "gnome_rometti",
@@ -1641,7 +1827,10 @@ export const SHOPS: Shop[] = [
    "gnome_boots_turquoise": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "gnome_heckelfunch",
@@ -1671,7 +1860,10 @@ export const SHOPS: Shop[] = [
    "cocktail_guide": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "zeke",
@@ -1688,7 +1880,10 @@ export const SHOPS: Shop[] = [
    "mithril_scimitar": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 90
  },
  {
   "npc": "lathas_shopkeeper",
@@ -1721,7 +1916,10 @@ export const SHOPS: Shop[] = [
    "adamant_2h_sword": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 1001
  },
  {
   "npc": "aprilfoolshorsesalesman",
@@ -1738,7 +1936,10 @@ export const SHOPS: Shop[] = [
    "horsey_grey": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 177
  },
  {
   "npc": "shilogeneralstore",
@@ -1774,7 +1975,10 @@ export const SHOPS: Shop[] = [
    "rope": 10
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "siegfried_erkle",
@@ -1793,7 +1997,10 @@ export const SHOPS: Shop[] = [
    "cape_of_legends": 3
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "viking_sigmund",
@@ -1823,7 +2030,10 @@ export const SHOPS: Shop[] = [
    "cabbage": 10
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "quest: viking",
+  "walkTiles": 997
  },
  {
   "npc": "ranging_guild_tribal_salesman",
@@ -1848,7 +2058,10 @@ export const SHOPS: Shop[] = [
    "rune_thrownaxe": 400
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 814
  },
  {
   "npc": "ranging_guild_armour_salesman",
@@ -1869,7 +2082,10 @@ export const SHOPS: Shop[] = [
    "leather_vambraces": 10
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "ranging_guild_bow_salesman",
@@ -1901,7 +2117,10 @@ export const SHOPS: Shop[] = [
    "willow_longbow": 20
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "jiminua",
@@ -1939,7 +2158,10 @@ export const SHOPS: Shop[] = [
    "bronze_bar": 10
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "hickton",
@@ -1972,7 +2194,10 @@ export const SHOPS: Shop[] = [
    "studded_chaps": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 649
  },
  {
   "npc": "tbwt_tiadeche_final",
@@ -1987,7 +2212,10 @@ export const SHOPS: Shop[] = [
    "tbwt_karambwan_vessel": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "generalshopkeeper5",
@@ -2007,7 +2235,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 356
  },
  {
   "npc": "generalassistant5",
@@ -2027,7 +2258,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 355
  },
  {
   "npc": "generalassistant4",
@@ -2047,7 +2281,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 366
  },
  {
   "npc": "generalshopkeeper4",
@@ -2067,7 +2304,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 362
  },
  {
   "npc": "khazard_shopkeeper",
@@ -2092,7 +2332,10 @@ export const SHOPS: Shop[] = [
    "swamppaste": 500
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 1024
  },
  {
   "npc": "death_shopkeeper",
@@ -2112,7 +2355,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 518
  },
  {
   "npc": "treevillage_shopkeeper1",
@@ -2135,7 +2381,10 @@ export const SHOPS: Shop[] = [
    "cooked_meat": 2
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "generalshopkeeper6",
@@ -2155,7 +2404,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 316
  },
  {
   "npc": "generalassistant6",
@@ -2175,7 +2427,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 316
  },
  {
   "npc": "werewolfshopkeeper2",
@@ -2218,7 +2473,10 @@ export const SHOPS: Shop[] = [
    "green_cape": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "aemad",
@@ -2240,7 +2498,10 @@ export const SHOPS: Shop[] = [
    "papyrus": 50
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 914
  },
  {
   "npc": "kortan",
@@ -2262,7 +2523,10 @@ export const SHOPS: Shop[] = [
    "papyrus": 50
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 916
  },
  {
   "npc": "valaine",
@@ -2279,7 +2543,10 @@ export const SHOPS: Shop[] = [
    "adamant_platebody": 1
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "oziach",
@@ -2294,7 +2561,10 @@ export const SHOPS: Shop[] = [
    "dragonhide_body": 2
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "quest: dragonquest",
+  "walkTiles": 357
  },
  {
   "npc": "candle_maker",
@@ -2308,7 +2578,10 @@ export const SHOPS: Shop[] = [
    "unlit_candle": 10
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 678
  },
  {
   "npc": "arhein",
@@ -2330,7 +2603,10 @@ export const SHOPS: Shop[] = [
    "pot_empty": 2
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 666
  },
  {
   "npc": "generalassistant2",
@@ -2350,7 +2626,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 225
  },
  {
   "npc": "generalshopkeeper2",
@@ -2370,7 +2649,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 223
  },
  {
   "npc": "tailorp",
@@ -2400,7 +2682,10 @@ export const SHOPS: Shop[] = [
    "eye_patch": 3
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 263
  },
  {
   "npc": "generalshopkeeper7",
@@ -2420,7 +2705,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "generalassistant7",
@@ -2440,7 +2728,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "generalshopkeeper1",
@@ -2461,7 +2752,10 @@ export const SHOPS: Shop[] = [
    "newcomer_map": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 47
  },
  {
   "npc": "generalassistant1",
@@ -2482,7 +2776,10 @@ export const SHOPS: Shop[] = [
    "newcomer_map": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 42
  },
  {
   "npc": "nulodion",
@@ -2501,7 +2798,10 @@ export const SHOPS: Shop[] = [
    "ammo_mould": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "quest: mcannon",
+  "walkTiles": 362
  },
  {
   "npc": "ogre_trader1",
@@ -2521,7 +2821,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 1247
  },
  {
   "npc": "ogre_merchant",
@@ -2537,7 +2840,10 @@ export const SHOPS: Shop[] = [
    "eye_of_newt": 50
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 1251
  },
  {
   "npc": "generalassistant3",
@@ -2557,7 +2863,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 107
  },
  {
   "npc": "generalshopkeeper3",
@@ -2577,7 +2886,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 109
  },
  {
   "npc": "regicidegeneralshopkeeper",
@@ -2602,7 +2914,10 @@ export const SHOPS: Shop[] = [
    "rune_halberd": 7
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "generalassistant8",
@@ -2622,7 +2937,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "generalshopkeeper8",
@@ -2642,7 +2960,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "irksol",
@@ -2656,7 +2977,10 @@ export const SHOPS: Shop[] = [
    "ruby_ring": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "dwarven_shopkeeper",
@@ -2676,7 +3000,10 @@ export const SHOPS: Shop[] = [
    "hammer": 5
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "blurberrybarmen",
@@ -2696,7 +3023,10 @@ export const SHOPS: Shop[] = [
    "premade_wizard_blizzard": 10
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "gnome_waiter",
@@ -2721,7 +3051,10 @@ export const SHOPS: Shop[] = [
    "premade_spicy_crunchies": 3
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "gnome_gulluck",
@@ -2755,7 +3088,10 @@ export const SHOPS: Shop[] = [
    "adamant_2h_sword": 1
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "upstairs",
+  "walkTiles": null
  },
  {
   "npc": "werewolfshopkeeper3",
@@ -2777,7 +3113,10 @@ export const SHOPS: Shop[] = [
    "empty_dye_bottle": 10
   },
   "buysAnything": true,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "death_barman",
@@ -2793,7 +3132,10 @@ export const SHOPS: Shop[] = [
    "dwarven_stout": 12
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": true,
+  "barrier": null,
+  "walkTiles": 524
  },
  {
   "npc": "boardgames_barmaid",
@@ -2809,7 +3151,10 @@ export const SHOPS: Shop[] = [
    "dwarven_stout": 12
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "boardgames_barmaid2",
@@ -2825,7 +3170,10 @@ export const SHOPS: Shop[] = [
    "dwarven_stout": 12
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  },
  {
   "npc": "magearena_guardian",
@@ -2841,6 +3189,9 @@ export const SHOPS: Shop[] = [
    "zamorak_staff": 5
   },
   "buysAnything": false,
-  "safe": true
+  "safe": true,
+  "accessible": false,
+  "barrier": "unreachable",
+  "walkTiles": null
  }
 ];

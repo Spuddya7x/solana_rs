@@ -134,17 +134,30 @@ await runScript(async ({ bot, sdk }) => {
         return 1;
     }
 
-    /** The shop paying most for this haul, nearest first among equals. */
+    /**
+     * The shop worth the most **per hour** for this haul.
+     *
+     * Not the shop paying the most: the fur stall pays 95% of cost and sits
+     * 861 tiles from Lumbridge, and a ten-minute round trip beats a two-minute
+     * one only if it pays more than five times as much. Counters that are
+     * upstairs, across water, or behind a quest or skill door are dropped
+     * outright — `accessible` is computed by `tools/build-money.ts` by asking
+     * the pathfinder to actually walk there from Lumbridge.
+     */
     function pickShop(items: string[]): Shop | undefined {
         const position = here(sdk);
-        return SHOPS.map((shop) => {
-            const value = items
-                .filter((item) => willBuy(shop, item))
-                .reduce((sum, item) => sum + sellPriceFor(shop, item, costOf(item), 0), 0);
-            const distance = Math.hypot(shop.x - position.x, shop.z - position.z);
-            return { shop, value, distance };
-        })
+        return SHOPS.filter((shop) => shop.accessible && shop.safe)
+            .map((shop) => {
+                const value = items
+                    .filter((item) => willBuy(shop, item))
+                    .reduce((sum, item) => sum + sellPriceFor(shop, item, costOf(item), 0), 0);
+                // Straight-line tiles under-reads a real path, but it is the
+                // right shape and costs nothing; running covers 2 tiles a tick.
+                const distance = Math.hypot(shop.x - position.x, shop.z - position.z);
+                const tripSeconds = Math.max(1, (2 * distance) / 2) * 0.6;
+                return { shop, value, rate: value / tripSeconds, distance };
+            })
             .filter((c) => c.value > 0)
-            .sort((a, b) => b.value - a.value || a.distance - b.distance)[0]?.shop;
+            .sort((a, b) => b.rate - a.rate || a.distance - b.distance)[0]?.shop;
     }
 });

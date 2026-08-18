@@ -27,6 +27,7 @@
 //! the convenience wrappers assume it is at base — the neutral case. Assuming a
 //! depleted shop would systematically overstate what a flip is worth.
 
+use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -56,6 +57,17 @@ pub struct Shop {
     /// x 2944-3391, z 3520-6399 or 9920+), so a z-only test wrongly condemns
     /// Rellekka and the whole north-west. Only two shops are actually inside it.
     pub safe: bool,
+    /// Whether a fresh account can actually walk here from Lumbridge.
+    ///
+    /// 45 of the 117 shops cannot be reached: 14 are upstairs, 30 have no path
+    /// at all, and the rest sit behind a door that checks a skill or quest. The
+    /// Legends Guild store is both — it was recommended by an early version of
+    /// the flip scanner, which is why this field exists.
+    pub accessible: bool,
+    /// Why not, when it cannot: `upstairs`, `unreachable`, or a gate requirement.
+    pub barrier: Option<String>,
+    /// Tiles of walking from Lumbridge. One tick per tile walking, half running.
+    pub walk_tiles: Option<u32>,
 }
 
 /// The price floor the formula clamps to: 10% of cost.
@@ -65,6 +77,14 @@ impl Shop {
     /// Whether this shop will take the item at all.
     pub fn will_buy(&self, item: &str) -> bool {
         self.buys_anything || self.stock.contains_key(item)
+    }
+
+    /// Seconds to walk here from Lumbridge and back, running.
+    ///
+    /// Running covers two tiles a tick and a tick is 0.6s. A trip is only worth
+    /// making if the profit clears what the same time would earn elsewhere.
+    pub fn round_trip_seconds(&self) -> Option<f64> {
+        self.walk_tiles.map(|tiles| 2.0 * tiles as f64 / 2.0 * 0.6)
     }
 
     /// What the shop holds at base stock.
@@ -135,15 +155,21 @@ pub fn shops() -> &'static [Shop] {
     })
 }
 
-/// The shop paying most for one unit of an item, wilderness counters excluded.
+/// The shop paying most for one unit, excluding the wilderness and anywhere the
+/// bot cannot walk to.
 ///
-/// Specialist shops are where the money is: a general store pays 60%, but the
-/// fur traders pay 95% for what they deal in.
+/// Specialist shops are where the money is — a general store pays 60% while the
+/// fur traders pay 95% — but only if the counter can be reached.
 pub fn best_shop_for(item: &str, cost: i64) -> Option<&'static Shop> {
-    best_shop_where(item, cost, |shop| shop.safe)
+    best_shop_where(item, cost, |shop| shop.safe && shop.accessible)
 }
 
 /// The best shop matching a predicate — pass `|_| true` to include the wilderness.
+///
+/// Ties on price are common: `uncut_diamond` fetches 70% of cost at both the
+/// Gem Trader and Herquin's, one 68 tiles from Lumbridge and the other 357. So
+/// the nearer counter wins a tie, and on equal distance the gentler `haggle`
+/// does, because that is the one that stays profitable for more units.
 pub fn best_shop_where(
     item: &str,
     cost: i64,
@@ -152,7 +178,13 @@ pub fn best_shop_where(
     shops()
         .iter()
         .filter(|shop| shop.will_buy(item) && allow(shop))
-        .max_by_key(|shop| shop.sell_price(item, cost, 0))
+        .max_by_key(|shop| {
+            (
+                shop.sell_price(item, cost, 0),
+                Reverse(shop.walk_tiles.unwrap_or(u32::MAX)),
+                Reverse(shop.haggle),
+            )
+        })
 }
 
 /// Every shop that will buy the item, best price first.
@@ -178,6 +210,9 @@ mod tests {
             stock: stock.iter().map(|(k, v)| (k.to_string(), *v)).collect(),
             buys_anything: anything,
             safe: true,
+            accessible: true,
+            barrier: None,
+            walk_tiles: Some(100),
         }
     }
 
@@ -255,6 +290,39 @@ mod tests {
         assert_eq!(s.worthwhile_count("x", 1_000, 360), 25);
         assert_eq!(s.worthwhile_count("x", 1_000, 600), 1);
         assert_eq!(s.worthwhile_count("x", 1_000, 601), 0);
+    }
+
+    #[test]
+    fn unreachable_shops_are_excluded() {
+        // The Legends Guild store is upstairs and behind a quest door; an early
+        // version of the flip scanner happily recommended it.
+        let legends: Vec<_> = shops()
+            .iter()
+            .filter(|s| s.title.contains("Legends Guild"))
+            .collect();
+        assert!(
+            !legends.is_empty(),
+            "the Legends Guild shops are in the table"
+        );
+        for shop in legends {
+            assert!(!shop.accessible, "{} should be unreachable", shop.title);
+            assert_eq!(shop.barrier.as_deref(), Some("upstairs"));
+        }
+        for item in ["lobster", "coins"] {
+            assert!(best_shop_for(item, 100).is_none_or(|s| s.accessible));
+        }
+    }
+
+    #[test]
+    fn reachable_shops_carry_a_walk_distance() {
+        let reachable: Vec<_> = shops().iter().filter(|s| s.accessible).collect();
+        assert!(reachable.len() > 50, "most shops are reachable");
+        for shop in &reachable {
+            assert!(shop.walk_tiles.is_some(), "{} has no distance", shop.title);
+            assert!(shop.round_trip_seconds().unwrap() > 0.0);
+        }
+        // The best-paying counters are also the furthest.
+        assert!(reachable.iter().any(|s| s.buy_multiplier >= 900));
     }
 
     #[test]

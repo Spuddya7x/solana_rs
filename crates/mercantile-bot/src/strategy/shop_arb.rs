@@ -1,8 +1,11 @@
 //! Buy what an NPC shop will pay more for than the pool charges.
 //!
 //! The sibling of [`super::alch_arb`], and the one that works before level 55.
-//! Alchemy pays a fixed `0.6 x cost`; a shopkeeper pays 60–95% of cost and needs
-//! no spell, no runes and no Magic level — only a walk to the right counter.
+//! Alchemy pays a fixed `0.6 x cost`; a specialist shopkeeper pays 60–95% of
+//! cost and needs no spell, no runes and no Magic level — only a walk to the
+//! right counter. A *general* store pays 40%, which is not enough to clear the
+//! 36% floor plus fees, so this strategy only fires on items some reachable
+//! specialist deals in.
 //!
 //! Like the alchemy strategy it has an obligation off chain: the items it buys
 //! are only worth what it paid once something bridges them into the game and
@@ -129,7 +132,7 @@ mod tests {
     #[test]
     fn buys_a_stack_a_shop_will_pay_for() {
         let mut strategy = ShopArbStrategy::new(ShopArbParams::default());
-        let market = market_for("rune_platebody", 65_000, 1.0);
+        let market = market_for("uncut_diamond", 3_200, 1.0);
         let signals = strategy.on_market(&market.view());
         assert_eq!(signals.len(), 1);
         assert_eq!(signals[0].side, Side::Buy);
@@ -142,6 +145,17 @@ mod tests {
         // account's skills, only on the two prices.
         let mut strategy = ShopArbStrategy::new(ShopArbParams::default());
         assert!(!strategy
+            .on_market(&market_for("uncut_diamond", 3_200, 1.0).view())
+            .is_empty());
+    }
+
+    #[test]
+    fn a_general_store_alone_is_not_enough() {
+        // rune_platebody's only specialist is Oziach, behind Dragon Slayer. The
+        // fallback is a general store at 40% of cost against a 36% floor, and
+        // 11% before slippage does not clear the 20% default margin.
+        let mut strategy = ShopArbStrategy::new(ShopArbParams::default());
+        assert!(strategy
             .on_market(&market_for("rune_platebody", 65_000, 1.0).view())
             .is_empty());
     }

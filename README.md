@@ -121,17 +121,26 @@ does lands in an append-only JSONL journal that `mercbot report` summarises.
 
 ## Two exits from a pool position
 
-Alchemy is not the only buyer. A pool's floor is **36% of an item's cost**; an
-NPC shopkeeper's `shop_buy_multiplier` is **600–950**, so selling at a counter
-returns 60–95%. That is the same 1.67× high alchemy pays at the low end, better
-at the high end — and it needs **no Magic level, no runes, and no level 55 gate**.
+Alchemy is not the only buyer. A pool's floor is **36% of an item's cost**; a
+**specialist** shopkeeper's `shop_buy_multiplier` is **600–950**, so selling at
+the right counter returns 60–95%. That is the same 1.67× high alchemy pays at
+the low end, better at the high end — and it needs **no Magic level, no runes,
+and no level 55 gate**.
+
+The word "specialist" is doing the work. Every **general store** a fresh account
+can reach pays 400 — 40% of cost, which is exactly low-alchemy value and only
+11% over the pool floor. With `haggle = 30` that 11% is gone by the third unit,
+so a general store is somewhere to dump loot, not somewhere to flip.
 
 ```
-$ mercbot shop-flip --limit 4
-market                   items      buy GP     shop GP     profit  margin  sell to
-dragon_sq_shield            10     2024889     2525000     500111     25%  Legends Guild General Store.
-dragon_chainbody            10     1014796     1262500     247704     24%  Legends Guild General Store.
-twpart1                     10      762273      946875     184602     24%  Legends Guild General Store.
+$ mercbot shop-flip --scan 220 --limit 6 --bankroll 50000
+market                 items      buy GP     profit margin  tiles     GP/hour  sell to
+adamant_platelegs         10       30788       7932    26%    108      403324  Louies' Armoured Legs Bazaar.
+adamant_plateskirt        10       30788       7932    26%    113      386929  Ranael's Super Skirt Store.
+mithril_battleaxe          5        3927        803    20%     27      150557  Bob's Brilliant Axes.
+mithril_platelegs         10       12829       2901    23%    108      147502  Louies' Armoured Legs Bazaar.
+mithril_plateskirt        10       12829       2901    23%    113      141506  Ranael's Super Skirt Store.
+diamond_necklace           9       16121       4383    27%    254       99991  Grum's Gold Exchange.
 ```
 
 Both decays are modelled rather than assumed: the pool charges more per item as
@@ -140,6 +149,42 @@ unit), so `items` is where the two curves cross. Revenue is priced with the
 counter at its **base stock** — a depleted shop pays far more, up to 5.7× cost,
 but planning on that promises profit that only exists if nobody traded there
 recently.
+
+### Can the bot get there, and is the trip worth it?
+
+Two filters that a naive scanner skips, and both change the answer.
+
+**Reachability.** Only **64 of the 117 shops** can be walked to from Lumbridge by
+a fresh account. `tools/build-money.ts` decides this by asking the game's own
+pathfinder, and records why not:
+
+| Barrier | Shops | What it is |
+| --- | ---: | --- |
+| `unreachable` | 30 | Across water or otherwise off the walkable graph |
+| `upstairs` | 14 | On a level above 0, reached by a staircase |
+| `quest: viking` | 6 | The Fremennik counters, behind The Fremennik Trials |
+| `gated: fishing 68` | 1 | The Fishing Guild |
+| `quest: dragonquest` | 1 | Oziach, behind Dragon Slayer |
+| `quest: mcannon` | 1 | Behind Dwarf Cannon |
+
+Gates come in two shapes and it takes both detectors to find them all. Most are
+**doors**: an `[oploc1,…]` handler that checks a quest or a stat before it opens.
+The Fremennik shops are not — they check `%viking < ^viking_complete` inside the
+**shopkeeper's own** `[opnpc…]` script, with no door involved, so a door-only
+scan walks you all the way to Rellekka and finds a merchant who will not trade.
+
+**Trip time.** The best-paying counters are the furthest: the Ardougne fur stall
+pays 95% of cost and sits 861 tiles from Lumbridge, about ten minutes of round
+trip. Flips are therefore ranked by **GP per hour**, not profit per trip, and a
+tie on price goes to the nearer counter — `uncut_diamond` fetches 70% at both
+Herquin's and the Gem Trader, and the Gem Trader is 68 tiles away rather than
+357.
+
+**Capital.** GP/hour says nothing about the GP tied up, so without `--bankroll`
+the top of the board is whatever item is most expensive: a dragon square shield
+is an 8% general-store flip, but 8% of 184,000 GP is not a trade an account with
+20,000 can take. `--bankroll` caps each size to what is actually affordable, and
+`--min-margin` (default 0.1) hides the razor-thin rows.
 
 Wilderness counters are excluded. The wilderness is bounded in **x as well as z**
 (`wilderness_zones.dbrow`: x 2944–3391, z 3520–6399), so a z-only test condemns

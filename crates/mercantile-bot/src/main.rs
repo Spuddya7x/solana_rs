@@ -134,6 +134,12 @@ struct ShopFlipArgs {
     /// Only scan this many of the richest markets (each costs an RPC read).
     #[arg(long, default_value_t = 200)]
     scan: usize,
+    /// GP on hand. Sizes are capped to what this can actually buy.
+    #[arg(long)]
+    bankroll: Option<f64>,
+    /// Hide flips thinner than this fraction of the GP outlay.
+    #[arg(long, default_value_t = 0.1)]
+    min_margin: f64,
     #[arg(long)]
     json: bool,
 }
@@ -594,7 +600,7 @@ fn alch_scan(cli: &Cli, args: &AlchScanArgs) -> Result<()> {
 }
 
 fn shop_flip(cli: &Cli, args: &ShopFlipArgs) -> Result<()> {
-    use mercantile_bot::shopflip::{best_size, rank};
+    use mercantile_bot::shopflip::{best_size_within, rank};
 
     let config = load_config(cli)?;
     let registry = load_registry(&config)?;
@@ -613,7 +619,10 @@ fn shop_flip(cli: &Cli, args: &ShopFlipArgs) -> Result<()> {
     let flips: Vec<_> = candidates
         .iter()
         .zip(states)
-        .filter_map(|(market, state)| best_size(market, &state?, args.max_items, point))
+        .filter_map(|(market, state)| {
+            best_size_within(market, &state?, args.max_items, point, args.bankroll)
+        })
+        .filter(|flip| flip.margin >= args.min_margin)
         .collect();
     let ranked = rank(flips);
     let shown: Vec<_> = ranked.iter().take(args.limit).collect();
@@ -624,18 +633,19 @@ fn shop_flip(cli: &Cli, args: &ShopFlipArgs) -> Result<()> {
     }
 
     println!(
-        "{:<24} {:>5} {:>11} {:>11} {:>10} {:>7}  sell to",
-        "market", "items", "buy GP", "shop GP", "profit", "margin"
+        "{:<22} {:>5} {:>11} {:>10} {:>6} {:>6} {:>11}  sell to",
+        "market", "items", "buy GP", "profit", "margin", "tiles", "GP/hour"
     );
     for row in &shown {
         println!(
-            "{:<24} {:>5} {:>11.0} {:>11.0} {:>10.0} {:>6.0}%  {}",
+            "{:<22} {:>5} {:>11.0} {:>10.0} {:>5.0}% {:>6} {:>11.0}  {}",
             row.market,
             row.items,
             row.gp_cost,
-            row.shop_revenue,
             row.profit_gp,
             row.margin * 100.0,
+            row.walk_tiles,
+            row.gp_per_hour,
             row.shop_title,
         );
     }
@@ -647,11 +657,21 @@ fn shop_flip(cli: &Cli, args: &ShopFlipArgs) -> Result<()> {
             ranked.len(),
             candidates.len()
         );
-        println!("cost; shops pay 60-95%, so this is the alchemy margin without the Magic level.");
+        println!("cost. A specialist counter pays 60-95% of it — the alchemy margin without the");
+        println!("Magic level — while a general store pays 40%, so those rows are thin by nature.");
         println!(
             "Shop revenue assumes the counter is at its base stock — a depleted one pays more."
         );
         println!("'items' is where the pool's rising price meets the shop's falling bid.");
+        println!(
+            "Only counters a fresh account can walk to are quoted: no upstairs, no quest doors."
+        );
+        println!(
+            "'tiles' is the walk from Lumbridge, and the ranking is by GP/hour, not per trip."
+        );
+        println!(
+            "GP/hour ignores the GP tied up, so pass --bankroll to size against what you hold."
+        );
     }
     Ok(())
 }

@@ -12,14 +12,24 @@
  *
  * Two things fall out of that, and they decide the whole money-making plan:
  *
- * * **Shops buy at 60–70% of an item's cost** (`shop_buy_multiplier` is 600–700
- *   on real shopkeepers), while a Mercantile pool's floor is `0.9 x lowalch`,
- *   which is 36% of cost. Selling a floor-priced item to an NPC is the same
- *   1.67x that high alchemy pays — with no Magic level and no runes.
+ * * **A specialist buys at 60–95% of cost** (`shop_buy_multiplier` is 600–950
+ *   on shopkeepers who deal in the item), while a Mercantile pool's floor is
+ *   `0.9 x lowalch`, which is 36% of cost. Selling a floor-priced item to the
+ *   right NPC beats the 1.67x that high alchemy pays — with no Magic level and
+ *   no runes. A **general store** is a different animal: every one a fresh
+ *   account can reach pays 400, i.e. 40% of cost, which is low-alchemy value
+ *   and only 11% over the floor. General stores are for dumping loot, not for
+ *   flipping.
  * * **The price decays as you sell.** `diff` is how far the shop's stock has
  *   risen above its base, and each unit knocks `haggle/1000` off the multiplier,
  *   so 10 costs 1% of value per item and 30 costs 3%. That, not inventory space,
- *   is what caps a single visit.
+ *   is what caps a single visit. At 400/haggle 30 the decay eats the whole 11%
+ *   inside three units, which is why the general-store flip is not a trade.
+ * * **The counter has to be reachable.** 53 of the 117 shops are not: upstairs,
+ *   across water, or behind a door — or, for the Fremennik shops, behind a
+ *   `%viking < ^viking_complete` check inside the shopkeeper's own script, with
+ *   no door involved at all. `Shop.accessible` records the pathfinder's verdict
+ *   and `Shop.barrier` says why not.
  */
 
 import type { Shop } from './world.generated';
