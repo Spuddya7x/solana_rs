@@ -18,6 +18,12 @@ git clone -b claude/framework-trading-bot-xk8oz3 \
 cp -r ../solana_rs/gamebot bots/mercbot
 ```
 
+On Windows `cmd.exe` the last line is:
+
+```bat
+xcopy /E /I /Y ..\solana_rs\gamebot bots\mercbot
+```
+
 `bots/` is where the SDK's own tooling looks for a bot (`bots/<name>/bot.env`),
 which is why it goes there rather than being run from `solana_rs`.
 
@@ -30,6 +36,19 @@ cd mercantile/server/engine
 bun install
 BUILD_VERIFY=false bun run src/app.ts
 ```
+
+`cmd.exe` has no inline env-var syntax — `BUILD_VERIFY=false bun ...` fails
+there. Set it first, on its own line (a trailing space before `&&` ends up
+*inside* the value, so do not chain it):
+
+```bat
+cd server\engine
+bun install
+set BUILD_VERIFY=false
+bun run src/app.ts
+```
+
+PowerShell: `$env:BUILD_VERIFY = "false"` then `bun run src/app.ts`.
 
 First boot packs the cache and takes a couple of minutes. Wait for:
 
@@ -68,6 +87,18 @@ GATEWAY_URL=ws://localhost:7780
 PROFANITY_FILTER=false
 ```
 
+On `cmd.exe`, either `notepad bots\mercbot\bot.env` and paste, or:
+
+```bat
+(
+echo BOT_USERNAME=mercbot01
+echo PASSWORD=test
+echo SERVER=localhost:8888
+echo GATEWAY_URL=ws://localhost:7780
+echo PROFANITY_FILTER=false
+) > bots\mercbot\bot.env
+```
+
 `GATEWAY_URL` is not optional here. The runner otherwise derives the gateway
 from `SERVER`, and `localhost:8888` is the engine, not the gateway.
 
@@ -95,22 +126,28 @@ bun bots/mercbot/dashboard/server.ts --server localhost:8888
 Open <http://localhost:8420>. It attaches as an **observer**, so it never
 disturbs whatever is driving the bot.
 
+## A note on Windows
+
+Everything here was verified on Linux. The four services are all `bun`, which is
+cross-platform, and the paths inside the scripts are all relative — but two
+things differ and both are called out above: `cp` → `xcopy`, and inline env vars
+→ `set`. Forward slashes work fine as arguments to `bun` on Windows, so
+`bun bots/mercbot/dashboard/server.ts` is correct as written.
+
+If `bun` is not installed: <https://bun.sh/docs/installation> —
+`powershell -c "irm bun.sh/install.ps1 | iex"`.
+
 ## The first thing to do: skip the tutorial
 
 A fresh account spawns on **Tutorial Island** at `(6976, 6464)` with an empty
 inventory. None of the bots work until it is out — no tools, no targets, and
 `Man`/`Woman` do not exist there.
 
+It ships as a script, so there is no shell quoting to get wrong. From the
+mercantile root:
+
 ```sh
-bun -e '
-import { BotSDK } from "./sdk/index";
-import { BotActions } from "./sdk/actions";
-const sdk = new BotSDK({ botUsername: "mercbot01", password: "test",
-  gatewayUrl: "ws://localhost:7780", connectionMode: "control", autoLaunchBrowser: false });
-await sdk.connect();
-await sdk.waitForCondition(s => s.inGame && !!s.player, 30000);
-console.log(await new BotActions(sdk).skipTutorial());
-process.exit(0);'
+bun bots/mercbot/tools/skip-tutorial.ts
 ```
 
 Verified output: `{"success":true,"message":"Tutorial skipped after 3 dialog clicks"}`,
