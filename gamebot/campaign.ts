@@ -5,6 +5,8 @@
  * next thing, and repeats:
  *
  * ```
+ *   fund      collect respawning ground spawns and sell them — a new character
+ *             has 25 gp and training costs about 113,000 in runes
  *   equip     get a splash kit, so stat-reduction spells stay castable
  *   stock     buy runes from a shop that has no entry requirements
  *   train     splash up the ladder to the level alchemy needs
@@ -28,6 +30,7 @@ import { NAV, capabilities, here, travelTo } from './lib/nav';
 import { SPELLS, bestTrainingSpell, castsToLevel, shouldSplash } from './lib/spells';
 import { SPLASH_KIT, equippedMagicAttack, splashGuaranteed, unwornKit } from './lib/splash';
 import { runeBudget, stockRunes } from './lib/supply';
+import { bestClusters, collectCluster } from './lib/money/loot-run';
 import { claimDeposits, withdrawGpToWallet } from './lib/bridge';
 
 const args = process.argv.slice(2);
@@ -47,7 +50,10 @@ const CASH_OUT_AT = Number(flag('cash-out-at', '50000'));
 /** Casts to buy runes for in one shopping trip. */
 const RESTOCK_CASTS = Number(flag('restock', '250'));
 
-type Stage = 'equip' | 'stock' | 'train' | 'produce' | 'cash_out' | 'done';
+type Stage = 'fund' | 'equip' | 'stock' | 'train' | 'produce' | 'cash_out' | 'done';
+
+/** GP below which the account cannot buy enough runes to train at all. */
+const BROKE_BELOW = Number(flag('broke-below', '2000'));
 
 await runScript(async ({ bot, sdk }) => {
     await bot.skipTutorial();
@@ -88,6 +94,9 @@ await runScript(async ({ bot, sdk }) => {
         const spell = bestTrainingSpell(level, hasAlchables(), UNDEAD_TARGET !== '');
         const trained = level >= TARGET_LEVEL;
 
+        // Nothing else works without GP: runes are the only running cost of
+        // training and a fresh character has about 25 coins.
+        if (!trained && sdk.countInventoryItems(/^coins$/i) < BROKE_BELOW) return 'fund';
         if (!trained && shouldSplash(spell) && !splashGuaranteed(sdk) && canImproveKit()) {
             return 'equip';
         }
@@ -102,6 +111,8 @@ await runScript(async ({ bot, sdk }) => {
 
     async function run(stage: Stage): Promise<string> {
         switch (stage) {
+            case 'fund':
+                return fund();
             case 'equip':
                 return equip();
             case 'stock':
@@ -115,6 +126,33 @@ await runScript(async ({ bot, sdk }) => {
             case 'done':
                 return 'nothing to do';
         }
+    }
+
+    /**
+     * Earn the GP that everything else depends on.
+     *
+     * Ground spawns, because measurement said so: cow hides, beef, bones and
+     * feathers are all `cost = 1` and sell for zero, and a barbarian averages
+     * about 11 GP a kill. Two clusters near Varrock hold ~2,300 GP of shop value
+     * and respawn every minute, and one of them is the splash kit.
+     */
+    async function fund(): Promise<string> {
+        const clusters = bestClusters(2);
+        let earned = 0;
+        for (const cluster of clusters) {
+            const near = NAV.all()
+                .filter((p) => p.level === cluster.level)
+                .sort(
+                    (a, b) =>
+                        Math.hypot(a.x - cluster.x, a.z - cluster.z) -
+                        Math.hypot(b.x - cluster.x, b.z - cluster.z),
+                )[0];
+            if (near) await travelTo(bot, sdk, near.id);
+            await bot.walkTo(cluster.x, cluster.z, 2);
+            const result = await collectCluster(bot, sdk, cluster);
+            earned += result.value;
+        }
+        return `collected ${earned} gp of cost from ${clusters.length} clusters — run moneymaker.ts to sell it`;
     }
 
     /** Wear the splash kit, buying the missing pieces if there is GP for them. */

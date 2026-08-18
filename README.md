@@ -18,7 +18,7 @@ game's Exchange Clerk:
 One account, start to finish, and each stage feeds the next:
 
 ```
-gamebot/campaign.ts     equip -> stock runes -> train -> alch -> cash out GP
+gamebot/campaign.ts     fund -> equip -> stock runes -> train -> alch -> cash out GP
                                        |                            |
                         buys runes from Aubury/Betty      Exchange Clerk -> wallet
                                                                       |
@@ -27,7 +27,10 @@ mercbot run                                       accumulate: GP -> capped-suppl
 
 `campaign.ts` derives its stage from what it observes rather than from saved
 state, so it is safe to kill, restart, point at a half-trained account, or run
-across a fleet at different stages with one command line.
+across a fleet at different stages with one command line. It funds itself from
+respawning ground spawns — cow hides and low-level drops were measured and are
+worth almost nothing in this world; see
+[`gamebot/README.md`](gamebot/README.md#making-the-first-20000-gp).
 
 ```sh
 bun bots/<name>/campaign.ts --target 55 --alch "rune platebody" --cycles 20

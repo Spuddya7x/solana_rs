@@ -42,6 +42,7 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 | Script | What it does |
 |---|---|
 | `campaign.ts` | **The whole account.** Works out what stage it is at and does the next thing. |
+| `moneymaker.ts` | Funds a fresh account from ground spawns. |
 | `train-magic.ts` | Trains Magic to a target level, picking the best method available. |
 | `alch-loop.ts` | Alchs a stack of items and optionally withdraws the GP to the wallet. |
 | `lib/spells.ts` | Spell component ids, levels, runes, XP — derived from the game's config. |
@@ -49,8 +50,63 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 | `lib/bridge.ts` | Exchange Clerk dialogue: claim, withdraw GP, withdraw items. |
 | `lib/economics.ts` | Alch values and break-evens, mirroring the Rust `alch` module. |
 | `lib/supply.ts` | Buying runes from shops with no entry requirements. |
+| `lib/money/` | The ground-spawn circuit, shop pricing, and verified safespots. |
 | `lib/nav/` | Navigation: gazetteer, router, executor. See below. |
 | `tools/build-places.ts` | Regenerates the gazetteer from the game's map data. |
+
+## Making the first 20,000 GP
+
+Training to 55 costs about 113,000 GP of runes; a new character has 25. Three
+things were measured before picking a route, and two of them killed the obvious
+answers:
+
+* **Cow hides are worth nothing here.** `cow_hide` has `cost = 1`, and shops pay
+  `cost x multiplier / 1000` with multipliers of 600–700 — so a hide sells for
+  **0 GP**. Raw beef, bones, feathers and raw chicken are all `cost = 1` too. The
+  classic hide run does not work in this economy.
+* **Low-level monster drops are worth single digits.** Reading each drop table's
+  own `random(128)` thresholds, a barbarian averages ~11 GP a kill. Every table
+  worth having (dragons, demons, giants) belongs to something a fresh account
+  cannot fight.
+* **Ground spawns pay properly.** Items on the floor respawn every 100 ticks — a
+  minute — for no levels and no combat. Two clusters near Varrock hold nearly all
+  the safe value:
+
+| Cluster | Contents | Shop value |
+|---|---|---|
+| Varrock sewers (3194, 9822) | ruby ring, gold necklace, gold bar, gold ore | ~1,755 GP |
+| Varrock surface (3254, 3452) | iron platebody, iron platelegs, iron sword | ~558 GP |
+
+The surface cluster is the **splash kit** — iron platebody and platelegs are −30
+and −21 magic attack — so the opening loop also equips the account for training.
+Everything else worth 50 GP or more is in the wilderness, where an unattended bot
+is someone else's loot.
+
+```sh
+bun bots/<name>/moneymaker.ts --target 20000
+```
+
+## Safespots
+
+A safespot is a tile where the monster can be **seen** but cannot **reach** you,
+and both halves were tested against the shipped collision data with the engine's
+own routines:
+
+* `hasLineOfSight(player -> npc)` must hold — the engine's `inApproachDistance`
+  uses exactly this for spell and arrow range.
+* `findLongPath(npc -> player)` must fail to arrive. Line-of-*walk* alone is not
+  enough: it tests a straight line, and monsters walk around pillars. The weaker
+  test marked every dungeon spawn safe; the real one does not.
+
+**Yes, you can cast over the Lumbridge cow fence.** From a cow at (3254, 3258),
+line-of-walk fails two tiles west but line-of-sight holds out to eleven — the
+textbook safespot signature. Cows are a *safe training spot*, not an income:
+their drops are worth nothing.
+
+`lib/money/safespots.ts` carries the verified entries worth using once an account
+can actually fight, richest first: black demons (706 GP/kill), fire giants (629),
+jogres (587), greater demons (502), ice giants (181), and moss giants (129) —
+the only one on the surface.
 
 ## The campaign
 
