@@ -1,0 +1,16 @@
+[package]
+name = "mercantile-core"
+description = "Registry, item and amount primitives for the Mercantile on-chain RuneScape economy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+solana-sdk.workspace = true
+ureq.workspace = true

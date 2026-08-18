@@ -1,0 +1,482 @@
+{
+  "generatedAt": "2026-08-18T11:11:05.000Z",
+  "currentPoint": 1787051465,
+  "pools": [
+    {
+      "key": "lobster",
+      "pool": "76T7nfCqbUcJH9KaA2NcCa5W7RzR5mBj3F44AbjZDLtX",
+      "mint": "14RTcWXNRnjiDw5piXPC7zQ2NbFE9VyStDSfP53qRSGP",
+      "data": "8ZptBBGxbbyAlpgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABg/cYZPPI9yhMJAAAAAAAAAOBl6vAyaQLBWouM/Ek954Gp8avuc+X/br//J4Yy5gAAASxPz1ba21nvbiXRTp43oONRycSqWVaAoeDgxuplIOpW2wW9hxTkpLzRYvzee5uIlJw5OzLkMiXoJo7cY9UCF2HZ+dfP64luFWK8rQxzcsH61Gnot2XW59aoqsPu3pgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApdoVjp5I2UNPdSMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMB6EAAAAAAAAAAAAAAAAAAAAAAAAAAAAGD9xhk88j3KEwkAAAAAAACbV2lOqRpchLHE/v8AAAAABshT6tYUWNj5CQAAAAAAAASxg2oAAAAAAQAAAAEBAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABfiYq2kdOnbAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA60EAAAAAAAAAAAAAAAAAAAAAAAAAAADAehAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAZtfTXzJciNuvfMlSNYOaGFGJ5kTkdDUGRFp6Hz7qxxSOAwAAAAAAAEBZ3R8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "spotPrice": 65.22124764227391
+    },
+    {
+      "key": "1dose1agility",
+      "pool": "6U1oaxua1hU7HXXRv9Jz7k8xeFzCAF7K6hwDiY1B32tv",
+      "mint": "2BB6trR4D2ZXf54yXPDyiyGKt6sZnPi9fPB6SoMHRSGP",
+      "data": "8ZptBBGxbbyAlpgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApCWthJUKpD0FAAAAAAAAEXbqvaFC4NScVyj+I3SZ57YSy3wEpnNX/I4vpOzeWEAAASxPz1ba21nvbiXRTp43oONRycSqWVaAoeDgxuplIEoYzTDw5IeuHxqVNbU8m33oT8uuF/OeFMA8Q7q6Q3YNxHxgfny7j/Uy+wTMZ50bL6QbttciktWqlCSYdKzgtocAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG6NlA5xmojTJeBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADePBQAAAAAAAAAAAAAAAAAAAAAAAAAAAACkJa2ElQqkPQUAAAAAAACbV2lOqRpchLHE/v8AAAAAu5CR7bnwMtjABQAAAAAAAP+/g2oAAAAAAQAAAAEBAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFLPd173RRUWAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADePBYAAAAAAAAAAAAAAAAAAAAAAAAAAAA3jwUAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAZtfTXzJciNuvfMlSNYOaGFGJ5kTkdDUGRFp6Hz7qxxSPAwAAAAAAALn6fQoAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "spotPrice": 21.692710015617926
+    },
+    {
+      "key": "bronze_dagger",
+      "pool": "CTsCsfA7CKHx3oTpqAYYDcfcA9PXbDahYH9jS3ayEN6w",
+      "mint": "5CvmBaSDMeR1stqnv1JM7WXwXHgXhpawT16JVmivRSGP",
+      "data": "8ZptBBGxbbyAlpgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQAQAAAAAAAFgCAAAAAAAAPnzs26LbMRLr7MYUtVK6gHJ40GAAbc3+41wvisFHRrAAASxPz1ba21nvbiXRTp43oONRycSqWVaAoeDgxuplIFtFLjXEvRH01pvVwPxv0mD8Nko00fNmn4Z7YN8BAAj1n4cgGliNuxQMyoTw9U4PVxnLTdZ6GC9Mo2Loenu2+zwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAswNoKqBEdRXAJwkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAZAQAAAAAAAAAAAAAAAAAAAAAAAAAAAJABAAAAAAAAWAIAAAAAAACbV2lOqRpchLHE/v8AAAAATv7sui3bZWaTAgAAAAAAANPDg2oAAAAAAQAAAAEBAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEcnGBOORuF6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZQQAAAAAAAAAAAAAAAAAAAAAAAAAAABAGQEAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAZtfTXzJciNuvfMlSNYOaGFGJ5kTkdDUGRFp6Hz7qxxSOAwAAAAAAAMDSHwIAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "spotPrice": 4.34808349056281
+    },
+    {
+      "key": "shark",
+      "pool": "HUsZyVsEKcfp51mYyuNSFeNE3VC5zRfrRzCEsKsWTeJu",
+      "mint": "EXTfvP4TLRmsqaWshFeYEBQZR72PACzAqqdmfJyWRSGP",
+      "data": "8ZptBBGxbbyAlpgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA68ABBSzZVdYMAAAAAAAAyPWC6EJyoJZMIzKz0tnJLS+fbJ633Yq3p9Q2kv10ctAAASxPz1ba21nvbiXRTp43oONRycSqWVaAoeDgxuplIHGEO/gHTlUl5vnphBc2WvnZj9502+eU356KfVGBFr9w+WqkqK1uXKU6vr+0mH1RBEq06xd7cA4BOETv5CTG6J4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjXG3DrcYEtxBJTIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAID1IAAAAAAAAAAAAAAAAAAAAAAAAAAAAADrwAEFLNlV1gwAAAAAAACbV2lOqRpchLHE/v8AAAAACzURBKbmqq4bDgAAAAAAAJqzg2oAAAAAAQAAAAEBAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE2OslCYfAqhAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1oMAAAAAAAAAAAAAAAAAAAAAAAAAAACA9SAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAZtfTXzJciNuvfMlSNYOaGFGJ5kTkdDUGRFp6Hz7qxxSOAwAAAAAAAICyuj8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "spotPrice": 130.44249001763527
+    }
+  ],
+  "cases": [
+    {
+      "pool": "lobster",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "10",
+      "amountIn": "66612116",
+      "amountOut": "10",
+      "totalFee": "0",
+      "maximumAmountIn": "66612116"
+    },
+    {
+      "pool": "lobster",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "50",
+      "amountIn": "348553230",
+      "amountOut": "50",
+      "totalFee": "0",
+      "maximumAmountIn": "348553230"
+    },
+    {
+      "pool": "lobster",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "250",
+      "amountIn": "2270942208",
+      "amountOut": "250",
+      "totalFee": "0",
+      "maximumAmountIn": "2270942208"
+    },
+    {
+      "pool": "lobster",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "1000",
+      "error": "Denominator is zero or negative"
+    },
+    {
+      "pool": "lobster",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "1000000",
+      "error": "Amount out must be greater than 0"
+    },
+    {
+      "pool": "lobster",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "100000000",
+      "amountIn": "100000000",
+      "amountOut": "14",
+      "totalFee": "0"
+    },
+    {
+      "pool": "lobster",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "10000000000",
+      "amountIn": "10000000000",
+      "amountOut": "568",
+      "totalFee": "0"
+    },
+    {
+      "pool": "lobster",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "10",
+      "amountIn": "10",
+      "amountOut": "63867135",
+      "totalFee": "0"
+    },
+    {
+      "pool": "lobster",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "50",
+      "amountIn": "50",
+      "amountOut": "306028897",
+      "totalFee": "0"
+    },
+    {
+      "pool": "lobster",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "250",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "lobster",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "1000",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "lobster",
+      "side": "sell",
+      "mode": "exact_out",
+      "amount": "1000000",
+      "amountIn": "1",
+      "amountOut": "1000000",
+      "totalFee": "0"
+    },
+    {
+      "pool": "lobster",
+      "side": "sell",
+      "mode": "exact_out",
+      "amount": "250000000",
+      "amountIn": "41",
+      "amountOut": "250000000",
+      "totalFee": "0"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "10",
+      "amountIn": "22155046",
+      "amountOut": "10",
+      "totalFee": "0",
+      "maximumAmountIn": "22155046"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "50",
+      "amountIn": "115922065",
+      "amountOut": "50",
+      "totalFee": "0",
+      "maximumAmountIn": "115922065"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "250",
+      "amountIn": "755005741",
+      "amountOut": "250",
+      "totalFee": "0",
+      "maximumAmountIn": "755005741"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "1000",
+      "error": "Denominator is zero or negative"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "1000000",
+      "error": "Amount out must be greater than 0"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "100000000",
+      "amountIn": "100000000",
+      "amountOut": "43",
+      "totalFee": "0"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "10000000000",
+      "amountIn": "10000000000",
+      "amountOut": "759",
+      "totalFee": "0"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "10",
+      "amountIn": "10",
+      "amountOut": "21242582",
+      "totalFee": "0"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "50",
+      "amountIn": "50",
+      "amountOut": "101791607",
+      "totalFee": "0"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "250",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "1000",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "sell",
+      "mode": "exact_out",
+      "amount": "1000000",
+      "amountIn": "1",
+      "amountOut": "1000000",
+      "totalFee": "0"
+    },
+    {
+      "pool": "1dose1agility",
+      "side": "sell",
+      "mode": "exact_out",
+      "amount": "250000000",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "10",
+      "amountIn": "4440809",
+      "amountOut": "10",
+      "totalFee": "0",
+      "maximumAmountIn": "4440809"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "50",
+      "amountIn": "23236885",
+      "amountOut": "50",
+      "totalFee": "0",
+      "maximumAmountIn": "23236885"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "250",
+      "amountIn": "151396184",
+      "amountOut": "250",
+      "totalFee": "0",
+      "maximumAmountIn": "151396184"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "1000",
+      "error": "Denominator is zero or negative"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "1000000",
+      "amountIn": "1000000",
+      "amountOut": "2",
+      "totalFee": "0"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "100000000",
+      "amountIn": "100000000",
+      "amountOut": "182",
+      "totalFee": "0"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "10000000000",
+      "amountIn": "10000000000",
+      "amountOut": "874",
+      "totalFee": "0"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "10",
+      "amountIn": "10",
+      "amountOut": "4257808",
+      "totalFee": "0"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "50",
+      "amountIn": "50",
+      "amountOut": "20401926",
+      "totalFee": "0"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "250",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "1000",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "sell",
+      "mode": "exact_out",
+      "amount": "1000000",
+      "amountIn": "3",
+      "amountOut": "1000000",
+      "totalFee": "0"
+    },
+    {
+      "pool": "bronze_dagger",
+      "side": "sell",
+      "mode": "exact_out",
+      "amount": "250000000",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "shark",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "10",
+      "amountIn": "133224225",
+      "amountOut": "10",
+      "totalFee": "0",
+      "maximumAmountIn": "133224225"
+    },
+    {
+      "pool": "shark",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "50",
+      "amountIn": "697106422",
+      "amountOut": "50",
+      "totalFee": "0",
+      "maximumAmountIn": "697106422"
+    },
+    {
+      "pool": "shark",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "250",
+      "amountIn": "4541883810",
+      "amountOut": "250",
+      "totalFee": "0",
+      "maximumAmountIn": "4541883810"
+    },
+    {
+      "pool": "shark",
+      "side": "buy",
+      "mode": "exact_out",
+      "amount": "1000",
+      "error": "Denominator is zero or negative"
+    },
+    {
+      "pool": "shark",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "1000000",
+      "error": "Amount out must be greater than 0"
+    },
+    {
+      "pool": "shark",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "100000000",
+      "amountIn": "100000000",
+      "amountOut": "7",
+      "totalFee": "0"
+    },
+    {
+      "pool": "shark",
+      "side": "buy",
+      "mode": "exact_in",
+      "amount": "10000000000",
+      "amountIn": "10000000000",
+      "amountOut": "413",
+      "totalFee": "0"
+    },
+    {
+      "pool": "shark",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "10",
+      "amountIn": "10",
+      "amountOut": "127734265",
+      "totalFee": "0"
+    },
+    {
+      "pool": "shark",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "50",
+      "amountIn": "50",
+      "amountOut": "612057778",
+      "totalFee": "0"
+    },
+    {
+      "pool": "shark",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "250",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "shark",
+      "side": "sell",
+      "mode": "exact_in",
+      "amount": "1000",
+      "error": "Price range is violated"
+    },
+    {
+      "pool": "shark",
+      "side": "sell",
+      "mode": "exact_out",
+      "amount": "1000000",
+      "amountIn": "1",
+      "amountOut": "1000000",
+      "totalFee": "0"
+    },
+    {
+      "pool": "shark",
+      "side": "sell",
+      "mode": "exact_out",
+      "amount": "250000000",
+      "amountIn": "20",
+      "amountOut": "250000000",
+      "totalFee": "0"
+    }
+  ]
+}

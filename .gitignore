@@ -1,0 +1,7 @@
+/target
+# Never commit keys, registries or run artefacts.
+*.keypair.json
+/.keys/
+/registry.json
+/mercbot.toml
+/*.jsonl

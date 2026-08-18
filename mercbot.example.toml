@@ -1,0 +1,115 @@
+# mercbot — example configuration.
+#
+# Copy to mercbot.toml and edit. Defaults are chosen so that a config you have
+# not finished thinking about cannot send a real order: paper mode is the
+# default, and live trading needs bot.mode = "live", bot.allow_live = true AND
+# `mercbot run --live` on the command line.
+
+[rpc]
+# Public mainnet is rate-limited; point this at Helius/Triton for real use.
+url = "https://api.mainnet-beta.solana.com"
+commitment = "confirmed"
+priority_fee_micro_lamports = 0
+
+[registry]
+# Downloaded on first use if missing, or with `mercbot registry-sync`.
+path = "registry.json"
+url = "https://raw.githubusercontent.com/MidTermDev/mercantile/main/chain/registry/registry.json"
+
+[bot]
+mode = "paper"            # "paper" | "live"
+allow_live = false        # second gate; --live is the third
+tick_interval_secs = 60
+history_capacity = 720    # 12 hours of minute ticks, for mean-reversion
+
+[wallet]
+# Required only in live mode. Keep it out of the repository.
+# keypair = "~/.config/solana/mercbot.json"
+
+[universe]
+# Name markets explicitly...
+include = ["naturerune", "rune_platebody", "rune_kiteshield", "dragon_med_helm"]
+exclude = []
+# ...or leave `include` empty and filter the registry instead:
+min_floor_gp = 500.0
+max_floor_gp = 1e9
+# members_only = false
+limit = 25
+
+[risk]
+# Every strategy's signals pass through here. These are the bot's real limits.
+max_gp_per_trade = 250000
+min_gp_per_trade = 500
+max_position_items = 100
+max_position_gp_per_market = 500000
+max_total_exposure_gp = 2000000
+max_slippage_pct = 1.0
+# Pools hold ~100 items, so a five-item buy moves one about 7%. A tight cap here
+# silently stops the bot trading at all.
+max_price_impact_pct = 10.0
+min_sol_balance = 0.01
+reserve_gp = 0.0
+trade_cooldown_secs = 300
+max_trades_per_hour = 20
+daily_loss_limit_gp = 0.0      # 0 disables the kill switch
+# Require the pool itself to be able to buy the position back. Leave at 0 when
+# the exit is the bridge and the alch spell rather than the pool — a pool sitting
+# on its floor holds no GP at all.
+min_exit_depth_mult = 0.0
+
+[paper]
+starting_gp = 5000000
+slippage_bps = 10.0
+# starting_items = { rune_platebody = 5 }
+
+[journal]
+path = "mercbot-journal.jsonl"
+record_snapshots = false
+
+# ---------------------------------------------------------------------------
+# Strategies. Run as many as you like; each sees every market every tick.
+# `mercbot strategies` describes them.
+# ---------------------------------------------------------------------------
+
+# Buy only what High Level Alchemy would pay for. The exit is the Exchange Clerk
+# and the spell, not the pool — so something must actually cast it.
+[[strategies]]
+kind = "alch-arb"
+min_margin = 0.25          # profit as a fraction of GP spent
+min_profit_gp = 1000.0
+max_items = 25
+max_position_items = 100
+nature_rune_gp = 0.0       # 0 = read it from the live nature rune market
+fire_rune_gp = 0.0         # 0 = a staff of fire is equipped
+
+# Buy near the permanent floor, sell into strength.
+[[strategies]]
+kind = "alch-floor"
+enabled = false
+buy_below_premium = 1.05
+take_profit_premium = 1.30
+take_profit_cost_mult = 1.15
+size_items = 5
+max_items = 50
+
+# Fade moves away from a rolling mean. Needs `window` ticks of history first.
+[[strategies]]
+kind = "mean-reversion"
+enabled = false
+window = 30
+entry_z = -1.5
+exit_z = 0.5
+size_items = 3
+max_items = 30
+max_entry_premium = 2.0
+stop_loss_pct = 0.0
+
+# A ladder anchored to the floor, which is the one price here that never drifts.
+[[strategies]]
+kind = "grid"
+enabled = false
+step_pct = 10.0
+levels = 5
+size_items = 2
+max_items = 20
+min_sell_cost_mult = 1.02

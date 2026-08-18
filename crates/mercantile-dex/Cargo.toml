@@ -1,0 +1,28 @@
+[package]
+name = "mercantile-dex"
+description = "Meteora DAMM v2 (cp-amm) pool decoding, quoting and swap building for Mercantile item/GP pools"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mercantile-core.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+primitive-types.workspace = true
+solana-sdk.workspace = true
+solana-client.workspace = true
+solana-commitment-config.workspace = true
+solana-compute-budget-interface.workspace = true
+solana-account-decoder-client-types.workspace = true
+spl-token.workspace = true
+spl-associated-token-account.workspace = true
+
+[dev-dependencies]
+base64.workspace = true
+serde_json.workspace = true

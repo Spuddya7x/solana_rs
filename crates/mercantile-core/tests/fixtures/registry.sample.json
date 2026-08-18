@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "network": "mainnet-beta",
+  "programId": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+  "generatedAt": "2026-08-17T20:09:25.997Z",
+  "gp": {
+    "mint": "123B7bdJzDYGkrAg7i3JUi5TaHYP47dqmSiR5qPRSGP",
+    "decimals": 6,
+    "symbol": "GP",
+    "name": "Gielinor GP",
+    "totalSupply": "10000000000"
+  },
+  "items": {
+    "lobster": {
+      "objId": 379,
+      "certObjId": 380,
+      "name": "Lobster",
+      "desc": "This looks tricky to eat.",
+      "cost": 150,
+      "lowalch": 60,
+      "p0GpPerItem": 54,
+      "symbol": "LOBSTER",
+      "stackable": false,
+      "members": false,
+      "mint": "14RTcWXNRnjiDw5piXPC7zQ2NbFE9VyStDSfP53qRSGP",
+      "pool": "76T7nfCqbUcJH9KaA2NcCa5W7RzR5mBj3F44AbjZDLtX",
+      "flags": []
+    },
+    "bronze_dagger": {
+      "objId": 1205,
+      "certObjId": 1206,
+      "name": "Bronze dagger",
+      "desc": "Short but pointy.",
+      "cost": 10,
+      "lowalch": 4,
+      "symbol": "BRONZEDAGG",
+      "stackable": false,
+      "members": false,
+      "mint": "5CvmBaSDMeR1stqnv1JM7WXwXHgXhpawT16JVmivRSGP",
+      "pool": "CTsCsfA7CKHx3oTpqAYYDcfcA9PXbDahYH9jS3ayEN6w",
+      "flags": []
+    },
+    "shark": {
+      "objId": 385,
+      "certObjId": 386,
+      "name": "Shark",
+      "desc": "I'd better be careful eating this.",
+      "cost": 300,
+      "lowalch": 120,
+      "symbol": "SHARK",
+      "stackable": false,
+      "members": true,
+      "mint": null,
+      "pool": null,
+      "flags": []
+    }
+  }
+}

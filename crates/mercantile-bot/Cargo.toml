@@ -1,0 +1,32 @@
+[package]
+name = "mercantile-bot"
+description = "A framework trading bot for the Mercantile on-chain RuneScape economy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "mercbot"
+path = "src/main.rs"
+
+[dependencies]
+mercantile-core.workspace = true
+mercantile-dex.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap.workspace = true
+solana-sdk.workspace = true
+solana-client.workspace = true
+solana-commitment-config.workspace = true
+chrono.workspace = true
+ctrlc.workspace = true
+
+[dev-dependencies]
+mercantile-dex.workspace = true
