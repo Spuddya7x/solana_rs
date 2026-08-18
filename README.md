@@ -229,7 +229,14 @@ before it, and closing the window changes nothing.
 
 Everything on it is derived from observed world state; the bot scripts report
 nothing. Run `gamebot/dashboard/preview.ts` to see it against a synthetic
-session with no game attached. `gamebot/README.md` has the details.
+session with no game attached.
+
+It carries a console, gated by the same mode split. Planning commands need no
+game at all — `thieve 12`, `forage 12`, `shop lobster 150` are the numbers
+`mercbot` prints, in the window. Inspection commands read the live bot. Taking
+control is its own command and refuses on the first attempt, because the gateway
+is last-controller-wins and escalating disconnects the running script.
+`gamebot/README.md` has the details.
 
 ## Getting an account to level 55
 

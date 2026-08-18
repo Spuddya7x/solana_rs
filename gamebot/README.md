@@ -58,6 +58,7 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 | `tools/build-places.ts` | Regenerates the gazetteer from the game's map data. |
 | `dashboard/server.ts` | Watches a running bot read-only and serves the session window. |
 | `dashboard/stats.ts` | Turns observed world states into rates, ETAs and an activity log. |
+| `dashboard/commands.ts` | The console: planning, inspection, and the gate on taking control. |
 | `dashboard/preview.ts` | Serves the window against a synthetic session, no game needed. |
 | `tsconfig.json` | Typechecks this bot. The repo's own config does not cover `bots/`. |
 
@@ -214,6 +215,41 @@ but a level cannot be missed. The activity line is read from the engine's own
 `mes(...)` strings — `pick_pocket` says "You pick the man's pocket" and
 `~fail_pick_pocket` says "You fail to pick the pocket", which is how the paint
 tells a successful run from a stunned one.
+
+### The console
+
+The window carries a command line, and what it can do is decided by the same
+mode split. Commands declare what they need and the dispatcher refuses anything
+the connection is not entitled to — the gate sits in `execute`, not in the
+handlers, so a new command cannot forget it.
+
+| Tier | Needs | Commands |
+| --- | --- | --- |
+| **Planning** | nothing at all | `thieve`, `forage`, `shop`, `spawns`, `safespots`, `help` |
+| **Live** | an observer | `skills`, `inv`, `where`, `npcs`, `locs`, `ground`, `log`, `say` |
+| **Control** | the character | `control`, `release` |
+
+Planning commands are the numbers `mercbot` prints, without leaving the window
+or having a game attached: `thieve 12` gives the pickpocket table at that level,
+`forage 12` sizes the trip, `shop lobster 150` finds the counter. `shop` says
+which kind it found, because a general store buys *anything* at 400/1000 and
+reporting that as a find would be misleading — it is low-alchemy value against a
+36% floor and gone by the third unit.
+
+`say` is the one action an observer may send, so the console can talk through
+the bot without taking it.
+
+**`control` is the sharp one.** The gateway is last-controller-wins: connecting
+in control mode disconnects whatever is driving the bot, and it does not come
+back on its own. So `control` refuses on the first attempt and explains; only
+`control --force` escalates. `release` drops back to observing and says plainly
+that the evicted script is still gone and needs restarting.
+
+The same dispatcher is on an HTTP endpoint, so a shell can drive it too:
+
+```sh
+curl -s localhost:8420/command -d 'thieve 12'
+```
 
 The server binds to loopback on purpose: the page has no authentication and the
 observer socket behind it is already authenticated as the bot.

@@ -232,6 +232,48 @@ table.skills tr.idle td { opacity: 0.45; }
 .log li.damage { color: var(--red); }
 .log li.system { color: #9c907a; }
 
+/* --- console ----------------------------------------------------------- */
+.console { grid-column: 1 / -1; }
+.console .mode {
+    float: right;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--green);
+}
+.console .mode.control { color: var(--red); }
+.out {
+    margin: 0 0 6px;
+    padding: 6px 8px;
+    background: var(--stone-dark);
+    border: 1px solid var(--edge);
+    border-radius: 2px;
+    height: 260px;
+    overflow-y: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.out .echo { color: var(--gold); }
+.out .err { color: var(--red); }
+.out .res { color: var(--parchment); }
+.prompt { display: flex; align-items: center; gap: 6px; }
+.prompt span { color: var(--gold); font-family: ui-monospace, Menlo, monospace; font-weight: 700; }
+.prompt input {
+    flex: 1 1 auto;
+    background: var(--stone-dark);
+    border: 1px solid var(--edge);
+    border-radius: 2px;
+    padding: 5px 7px;
+    color: #fff;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+}
+.prompt input:focus { outline: 1px solid var(--gold-dim); }
+.hint { font-size: 10px; color: #8b8069; margin-top: 4px; }
+
 .foot {
     grid-column: 1 / -1;
     color: #8b8069;
@@ -275,6 +317,19 @@ table.skills tr.idle td { opacity: 0.45; }
     <section class="panel" style="grid-column: 1 / -1">
         <h2>Activity</h2>
         <ul class="log" id="log"></ul>
+    </section>
+
+    <section class="panel console">
+        <h2>Console <span class="mode" id="mode">observe</span></h2>
+        <div class="out" id="out"></div>
+        <div class="prompt">
+            <span>&gt;</span>
+            <input id="cmd" autocomplete="off" spellcheck="false" placeholder="type 'help' — planning commands work with no game attached">
+        </div>
+        <div class="hint">
+            Planning and inspection are read-only. <code>control --force</code> takes the character,
+            which <strong>disconnects the running bot script</strong> — the gateway is last-controller-wins.
+        </div>
     </section>
 
     <footer class="foot" id="foot">
@@ -399,9 +454,71 @@ function render(session) {
     if (pinned) log.scrollTop = log.scrollHeight;
 }
 
+// --- console ------------------------------------------------------------
+let socket = null;
+let nextId = 1;
+const pending = new Map();
+const history = [];
+let historyAt = 0;
+
+function write(text, cls) {
+    const out = $('out');
+    // Only follow the tail if the reader is already at it, so scrolling back
+    // through earlier output is not yanked away by the next reply.
+    const pinned = out.scrollTop + out.clientHeight >= out.scrollHeight - 24;
+    const line = document.createElement('div');
+    line.className = cls;
+    line.textContent = text;
+    out.appendChild(line);
+    if (pinned) out.scrollTop = out.scrollHeight;
+}
+
+function send(line) {
+    write(`> ${line}`, 'echo');
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        write('not connected to the dashboard process', 'err');
+        return;
+    }
+    const id = nextId++;
+    pending.set(id, true);
+    socket.send(JSON.stringify({ type: 'command', line, id }));
+}
+
+$('cmd').addEventListener('keydown', (event) => {
+    const input = event.target;
+    if (event.key === 'Enter') {
+        const line = input.value.trim();
+        if (!line) return;
+        history.push(line);
+        historyAt = history.length;
+        input.value = '';
+        send(line);
+    } else if (event.key === 'ArrowUp' && historyAt > 0) {
+        event.preventDefault();
+        input.value = history[--historyAt] ?? '';
+    } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        historyAt = Math.min(history.length, historyAt + 1);
+        input.value = history[historyAt] ?? '';
+    }
+});
+
 function connect() {
-    const socket = new WebSocket(`ws://${location.host}/ws`);
-    socket.onmessage = (event) => render(JSON.parse(event.data));
+    socket = new WebSocket(`ws://${location.host}/ws`);
+    socket.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'command') {
+            pending.delete(message.id);
+            if (message.output) write(message.output, message.ok ? 'res' : 'err');
+            if (message.mode) {
+                $('mode').textContent = message.mode;
+                $('mode').className = `mode${message.mode === 'control' ? ' control' : ''}`;
+            }
+            return;
+        }
+        render(message);
+    };
+    socket.onopen = () => send('help');
     socket.onclose = () => {
         $('dot').className = 'dot';
         $('conn').textContent = 'dashboard disconnected — retrying';

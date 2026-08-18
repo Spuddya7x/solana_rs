@@ -30,6 +30,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { BotSDK, deriveGatewayUrl } from '../../../sdk/index';
+import { execute, type CommandContext, type Needs, type Worldish } from './commands';
 import { SessionTracker, type StateFrame } from './stats';
 
 const args = process.argv.slice(2);
@@ -76,6 +77,15 @@ if (!password && !isLocal) {
 const tracker = new SessionTracker();
 const clients = new Set<{ send: (data: string) => void }>();
 
+/**
+ * The connection's current mode.
+ *
+ * Starts at `observe` and only ever changes through the console's `control`
+ * command, which is deliberately awkward to invoke: escalating disconnects
+ * whatever script is driving the bot.
+ */
+let mode: Needs = 'observe';
+
 const sdk = new BotSDK({
     botUsername: username,
     password,
@@ -91,8 +101,12 @@ const sdk = new BotSDK({
     showChat: false,
 });
 
+/** The last raw frame, for the console's nearby-scan commands. */
+let latest: Worldish | null = null;
+
 sdk.onStateUpdate((state) => {
     tracker.push(state as unknown as StateFrame);
+    latest = state as unknown as Worldish;
 });
 
 sdk.onConnectionStateChange((connection, attempt) => {
@@ -109,6 +123,36 @@ try {
     // Not fatal: autoReconnect keeps trying, and the page renders "waiting".
     console.error(`[dashboard] could not reach the gateway: ${(err as Error).message}`);
     console.error('[dashboard] retrying in the background; the page will fill in when it connects');
+}
+
+/** Build the console's view of the world and run one line against it. */
+async function run(line: string): Promise<{ ok: boolean; output: string; mode: Needs }> {
+    const context: CommandContext = {
+        session: tracker.snapshot(),
+        state: latest,
+        mode,
+        say: async (message) => {
+            await sdk.say(message);
+        },
+        takeControl: async () => {
+            // Reconnecting in control mode is what evicts the running script —
+            // the gateway is last-controller-wins.
+            sdk.disconnect();
+            (sdk as unknown as { connectionMode: Needs }).connectionMode = 'control';
+            await sdk.connect();
+            mode = 'control';
+            tracker.append('console took control — previous controller disconnected', 'system');
+        },
+        release: async () => {
+            sdk.disconnect();
+            (sdk as unknown as { connectionMode: Needs }).connectionMode = 'observe';
+            await sdk.connect();
+            mode = 'observe';
+            tracker.append('console released control', 'system');
+        },
+    };
+    const result = await execute(line, context);
+    return { ...result, mode };
 }
 
 /** Broadcast a snapshot to every open window. */
@@ -140,6 +184,11 @@ const httpServer = Bun.serve({
         if (url.pathname === '/session') {
             return Response.json(tracker.snapshot());
         }
+        if (url.pathname === '/command' && request.method === 'POST') {
+            // Same dispatcher as the page's console, so a shell can drive it too:
+            //   curl -s localhost:8420/command -d 'thieve 10'
+            return request.text().then(async (line) => Response.json(await run(line)));
+        }
         return new Response(Bun.file(PAGE), { headers: { 'content-type': 'text/html; charset=utf-8' } });
     },
     websocket: {
@@ -150,9 +199,19 @@ const httpServer = Bun.serve({
         close(ws) {
             clients.delete(ws);
         },
-        message() {
-            // The page is a display. It sends nothing, and nothing it could send
-            // would be honoured — an observer connection cannot act anyway.
+        async message(ws, raw) {
+            // The console. Only `command` is understood; anything a command can
+            // do is gated by `commands.ts` against the current connection mode,
+            // so the page cannot reach past what this process is entitled to.
+            let parsed: { type?: string; line?: string; id?: number };
+            try {
+                parsed = JSON.parse(String(raw));
+            } catch {
+                return;
+            }
+            if (parsed.type !== 'command' || typeof parsed.line !== 'string') return;
+            const result = await run(parsed.line);
+            ws.send(JSON.stringify({ type: 'command', id: parsed.id, ...result }));
         },
     },
 });

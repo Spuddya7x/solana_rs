@@ -13,6 +13,7 @@
 import { join } from 'node:path';
 
 import { xpForLevel } from '../lib/spells';
+import { execute, type CommandContext } from './commands';
 import { SessionTracker, type StateFrame } from './stats';
 
 /**
@@ -141,7 +142,34 @@ const server = Bun.serve({
         close(ws) {
             clients.delete(ws);
         },
-        message() {},
+        async message(ws, raw) {
+            let parsed: { type?: string; line?: string; id?: number };
+            try {
+                parsed = JSON.parse(String(raw));
+            } catch {
+                return;
+            }
+            if (parsed.type !== 'command' || typeof parsed.line !== 'string') return;
+            // No gateway here, so no `say`, `takeControl` or `release`: the
+            // console reports those as unavailable rather than pretending.
+            const context: CommandContext = {
+                session: tracker.snapshot(),
+                state: {
+                    tick: 15_095,
+                    player: { name: 'mercbot01', x: 3221, z: 3219, level: 0, hp: 7, maxHp: 10 },
+                    nearbyNpcs: [
+                        { name: 'Man', x: 3221, z: 3219 },
+                        { name: 'Woman', x: 3217, z: 3205 },
+                        { name: 'Farmer', x: 3227, z: 3290 },
+                    ],
+                    nearbyLocs: [{ name: 'Tree', x: 3253, z: 3194 }],
+                    groundItems: [],
+                },
+                mode: 'observe',
+            };
+            const result = await execute(parsed.line, context);
+            ws.send(JSON.stringify({ type: 'command', id: parsed.id, ...result, mode: 'observe' }));
+        },
     },
 });
 
