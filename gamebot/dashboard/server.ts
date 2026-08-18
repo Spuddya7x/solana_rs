@@ -22,8 +22,8 @@
  * scripts report nothing and do not know this exists.
  *
  *   bun bots/<name>/dashboard/server.ts            # creds from bots/<name>/bot.env
- *   bun bots/<name>/dashboard/server.ts --bot mybot --port 842
- *   bun bots/<name>/dashboard/server.ts --server localhost
+ *   bun bots/<name>/dashboard/server.ts --bot mybot --port 8421
+ *   bun bots/<name>/dashboard/server.ts --gateway ws://localhost:7780
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -49,7 +49,9 @@ const PORT = Number(flag('port', '8420'));
 const PUSH_MS = Number(flag('interval', '1000'));
 
 /** Same `bot.env` resolution as `sdk/cli.ts` and `sdk/chat.ts`. */
-function loadBotEnv(botName: string): { username: string; password: string; server?: string } | null {
+function loadBotEnv(
+    botName: string,
+): { username: string; password: string; server?: string; gatewayUrl?: string } | null {
     const envPath = join(process.cwd(), 'bots', botName, 'bot.env');
     if (!existsSync(envPath)) return null;
     const env: Record<string, string> = {};
@@ -60,13 +62,29 @@ function loadBotEnv(botName: string): { username: string; password: string; serv
         if (eq > 0) env[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim();
     }
     if (!env.BOT_USERNAME || !env.PASSWORD) return null;
-    return { username: env.BOT_USERNAME, password: env.PASSWORD, server: env.SERVER };
+    return {
+        username: env.BOT_USERNAME,
+        password: env.PASSWORD,
+        server: env.SERVER,
+        gatewayUrl: env.GATEWAY_URL,
+    };
 }
 
 const botEnv = loadBotEnv(BOT_NAME);
 const username = flag('username') || botEnv?.username || process.env.USERNAME || BOT_NAME;
 const password = flag('password') || botEnv?.password || process.env.PASSWORD || '';
 const server = flag('server') || botEnv?.server || process.env.SERVER || 'rs-sdk-demo.fly.dev';
+
+/**
+ * Where the gateway is, which is **not** derivable from `server` locally.
+ *
+ * `deriveGatewayUrl('localhost:8888')` returns `ws://localhost:8888` — the
+ * engine's web port, not the gateway's 7780. The lite runner honours a
+ * `GATEWAY_URL` in `bot.env` for exactly this reason, so honour it here too
+ * rather than silently attaching to the wrong port and reporting "waiting".
+ */
+const gatewayUrl =
+    flag('gateway') || botEnv?.gatewayUrl || process.env.GATEWAY_URL || deriveGatewayUrl(server);
 const isLocal = server === 'localhost' || server.startsWith('localhost:');
 
 if (!password && !isLocal) {
@@ -90,7 +108,7 @@ let mode: Needs = 'observe';
 const sdk = new BotSDK({
     botUsername: username,
     password,
-    gatewayUrl: deriveGatewayUrl(server),
+    gatewayUrl,
     // The whole point: watch without stealing the session from the bot script.
     connectionMode: 'observe',
     autoReconnect: true,
@@ -119,7 +137,7 @@ sdk.onConnectionStateChange((connection, attempt) => {
     tracker.append(`gateway ${note}`, 'system');
 });
 
-console.log(`[dashboard] observing '${username}' via ${server}`);
+console.log(`[dashboard] observing '${username}' via ${gatewayUrl}`);
 try {
     await sdk.connect();
     console.log('[dashboard] attached as observer (the bot is untouched)');

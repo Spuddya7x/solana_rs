@@ -36,13 +36,17 @@
 import { runScript } from '../../sdk/runner';
 import { forage, hasTools, missingTools, SHRIMP_HEAL } from './lib/forage';
 import {
+    FATAL_OUTCOMES,
     bestTarget,
     canContinue,
+    classify,
     damagePerHour,
     healingNeeded,
     hitpointFloor,
     hitpoints,
+    randomEventNearby,
     successChance,
+    type Outcome,
     type Target,
 } from './lib/thieving';
 
@@ -89,6 +93,7 @@ await runScript(async ({ bot, sdk }) => {
     let attempts = 0;
     let successes = 0;
     let trips = 0;
+    const tally = new Map<Outcome, number>();
 
     while (Date.now() < deadline) {
         if (sdk.countInventoryItems(/^coins$/i) >= TARGET_GP) break;
@@ -119,6 +124,14 @@ await runScript(async ({ bot, sdk }) => {
             continue;
         }
 
+        // --- a random event outranks everything: the maze and cube variants
+        // teleport the character away, and an unattended run never recovers ---
+        const event = randomEventNearby(sdk.getState()?.nearbyNpcs ?? []);
+        if (event) {
+            console.log(`stopping: '${event}' is a random event NPC — deal with it before resuming`);
+            break;
+        }
+
         // --- pick a pocket ---
         const npc = sdk.findNearbyNpc(target.pattern);
         if (!npc) {
@@ -127,16 +140,37 @@ await runScript(async ({ bot, sdk }) => {
             continue;
         }
 
-        const before = sdk.countInventoryItems(/^coins$/i);
+        const hpBefore = hitpoints(sdk)?.current ?? 0;
+        const sinceTick = sdk.getState()?.tick ?? 0;
+
         await bot.interactNpc(npc, /pickpocket/i);
         attempts++;
-        // A success resolves next tick; a failure holds `%action_delay` for the
-        // full stun, so waiting it out here is what keeps the send rate honest.
+
+        // Read the engine's own words rather than inferring from the coin
+        // count. A coins-delta sampled a couple of ticks after the send
+        // undercounts badly — the inventory frame can lag the message — and it
+        // cannot tell a stun apart from a silent refusal.
         await sdk.waitForTicks(2);
-        if (sdk.countInventoryItems(/^coins$/i) > before) {
+        const state = sdk.getState();
+        const messages = (state?.gameMessages ?? [])
+            // By tick, not by index: `gameMessages` is a bounded buffer, so
+            // once it is full its length stops growing and a slice returns [].
+            .filter((m) => m.tick > sinceTick)
+            .map((m) => m.text);
+        const outcome: Outcome = classify(messages, {
+            before: hpBefore,
+            after: hitpoints(sdk)?.current ?? hpBefore,
+        });
+        tally.set(outcome, (tally.get(outcome) ?? 0) + 1);
+
+        if (outcome === 'success') {
             successes++;
-        } else {
+        } else if (outcome === 'failed') {
+            // `%action_delay` holds for the full stun; sending into it is wasted.
             await sdk.waitForTicks(target.stunTicks);
+        } else if (FATAL_OUTCOMES.includes(outcome)) {
+            console.log(`stopping: '${outcome}' — retrying will not help`);
+            break;
         }
 
         if (attempts % 50 === 0) {
@@ -156,6 +190,12 @@ await runScript(async ({ bot, sdk }) => {
         `done: ${earned} gp in ${minutes.toFixed(1)} min over ${attempts} attempts ` +
             `(${attempts ? ((successes / attempts) * 100).toFixed(0) : 0}% success, ${trips} forage trips) ` +
             `= ${minutes > 0 ? (earned / (minutes / 60)).toFixed(0) : 0} gp/hour`,
+    );
+    // The outcome breakdown is where a disappointing run explains itself: a pile
+    // of 'unknown' means the attempts are not landing at all, which is a
+    // different problem from a low success rate.
+    console.log(
+        'outcomes: ' + ([...tally].map(([o, n]) => `${o} x${n}`).join(', ') || 'none'),
     );
 });
 
