@@ -14,6 +14,7 @@ pub mod magic;
 pub mod registry;
 pub mod shops;
 pub mod sources;
+pub mod thieving;
 
 pub use alch::{high_alch_value, low_alch_value, HIGH_ALCH_LEVEL, HIGH_ALCH_MULT, LOW_ALCH_MULT};
 pub use amounts::{
@@ -27,3 +28,4 @@ pub use ids::{
 pub use registry::{Item, Market, Registry, RegistryError};
 pub use shops::{best_shop_for, shops, shops_for, Shop};
 pub use sources::{capped_items, sources_for, ItemSources, POOL_SEED_UNITS};
+pub use thieving::{best_target, sustain, Pickpocket, Sustain, PICKPOCKETS};

@@ -53,6 +53,8 @@ enum Command {
     Scarcity(ScarcityArgs),
     /// Rank markets by profit from buying on chain and selling to an NPC shop.
     ShopFlip(ShopFlipArgs),
+    /// Cost the thieving bootstrap: pickpockets, damage, and the food loop.
+    ThievePlan(ThievePlanArgs),
     /// Run the bot.
     Run(RunArgs),
     /// Download the item registry.
@@ -140,6 +142,21 @@ struct ShopFlipArgs {
     /// Hide flips thinner than this fraction of the GP outlay.
     #[arg(long, default_value_t = 0.1)]
     min_margin: f64,
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args)]
+struct ThievePlanArgs {
+    /// Current Thieving level.
+    #[arg(long, default_value_t = 1)]
+    thieving: u32,
+    /// Current Fishing level.
+    #[arg(long, default_value_t = 1)]
+    fishing: u32,
+    /// Current Cooking level.
+    #[arg(long, default_value_t = 1)]
+    cooking: u32,
     #[arg(long)]
     json: bool,
 }
@@ -241,6 +258,10 @@ fn main() -> Result<()> {
         Command::AlchScan(args) => alch_scan(&cli, args),
         Command::MagicPlan(args) => magic_plan(&cli, args),
         Command::Scarcity(args) => scarcity(&cli, args),
+        Command::ThievePlan(args) => {
+            thieve_plan(args);
+            Ok(())
+        }
         Command::ShopFlip(args) => shop_flip(&cli, args),
         Command::Run(args) => run(&cli, args),
         Command::RegistrySync(args) => registry_sync(&cli, args),
@@ -674,6 +695,69 @@ fn shop_flip(cli: &Cli, args: &ShopFlipArgs) -> Result<()> {
         );
     }
     Ok(())
+}
+
+/// Cost the thieving bootstrap. Needs no chain access — it is all engine data.
+fn thieve_plan(args: &ThievePlanArgs) {
+    use mercantile_bot::thieving::{plan, rank};
+    use mercantile_core::thieving::{best_target, PICKPOCKETS};
+
+    let routes = rank(plan(args.thieving, args.fishing, args.cooking));
+    if args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&routes).unwrap_or_default()
+        );
+        return;
+    }
+
+    println!(
+        "{:<12} {:>3} {:>7} {:>4} {:>4} {:>6} {:>8} {:>7} {:>9}",
+        "target", "thv", "food", "fish", "cook", "tiles", "gross/h", "uptime", "net GP/h"
+    );
+    for r in &routes {
+        println!(
+            "{:<12} {:>3} {:>7} {:>4} {:>4} {:>6.0} {:>8.0} {:>6.0}% {:>9.0}",
+            r.target,
+            r.thieving,
+            r.food,
+            r.fishing,
+            r.cooking,
+            r.tiles,
+            r.gross_gp_per_hour,
+            r.uptime * 100.0,
+            r.net_gp_per_hour,
+        );
+    }
+
+    let now = best_target(args.thieving);
+    println!(
+        "\nAt Thieving {} the best target is the {}: {:.0}% of attempts succeed for {:.0} coins,",
+        args.thieving,
+        now.name,
+        now.success(args.thieving) * 100.0,
+        now.coins
+    );
+    println!(
+        "and the rest cost {} hitpoint(s) and {} ticks of stun. That is {:.0} damage an hour",
+        now.stun_damage,
+        now.stun_ticks,
+        now.damage_per_hour(args.thieving)
+    );
+    println!("against 60 of passive regeneration, so the food loop is the constraint, not the");
+    println!("thieving. 'uptime' is the share of the clock left over once it is paid for.");
+
+    println!("\nTargets by hitpoints spent per 1000 GP earned, at their unlock level:");
+    for p in PICKPOCKETS {
+        println!(
+            "  {:<11} Thieving {:>2}  {:>6.0} GP/h  {:>5.1} HP/1000gp",
+            p.name,
+            p.level,
+            p.gp_per_hour(p.level),
+            p.hp_per_1000_gp(p.level)
+        );
+    }
+    println!("\nOnly men, farmers and warriors are near Lumbridge; knights are Ardougne.");
 }
 
 fn scarcity(cli: &Cli, args: &ScarcityArgs) -> Result<()> {

@@ -190,6 +190,35 @@ Wilderness counters are excluded. The wilderness is bounded in **x as well as z*
 (`wilderness_zones.dbrow`: x 2944–3391, z 3520–6399), so a z-only test condemns
 Rellekka and the north-west; the real bounds put only two shops inside it.
 
+## Where the first coins come from
+
+Neither exit above works on an account with no GP, so something has to go first.
+`mercbot thieve-plan` costs the cheapest option there is — picking pockets in
+Lumbridge, which needs no capital, no levels and no equipment:
+
+```
+$ mercbot thieve-plan --thieving 1 --fishing 1 --cooking 1
+target       thv    food fish cook  tiles  gross/h  uptime  net GP/h
+farmer        10  shrimp    1    1    115     7209     43%      3075
+man/woman      1   trout   20   34     50     3142     80%      2498
+man/woman      1  shrimp    1    1    115     3142     46%      1446
+```
+
+A man's pocket always holds exactly three coins — `pick_pocket_check_for_reward`
+rolls `random(128)` against a denominator his single 128-weight entry drives
+straight to zero — and seven attempts in ten succeed at Thieving 1.
+
+The interesting column is `uptime`. A failure stuns for eight ticks and takes a
+hitpoint, which works out at **434 damage an hour** against **60** of passive
+regeneration, and there is no food shop worth walking to: of the 64 reachable
+counters exactly one stocks food, and it sells cabbage that heals one. So the
+account has to fish its own, and at base levels that costs more than half the
+clock. `gamebot/thief.ts` runs the loop; `gamebot/README.md` has the circuit.
+
+The single biggest upgrade is **Thieving 10**, which costs about seven minutes
+and doubles the rate by unlocking farmers — nine coins for the same one-hitpoint
+stun. Cooking 34 is next: below it, `successchance 128,512` burns half the catch.
+
 ## Getting an account to level 55
 
 The bot that buys is useless without an account that can alch. That is
@@ -227,23 +256,43 @@ starts.
 
 ## Can real money leave?
 
-**Not today.** Checked rather than assumed: DexScreener lists 30 pairs for the GP
-mint and **every one is item/GP** — zero pairs price GP against anything, zero
-have a USD price, zero have USD liquidity. Jupiter returns `NO_ROUTES_FOUND` for
-GP to SOL. The economy is closed.
+**Not today, but the developer has said it will.** Checked rather than assumed:
+DexScreener lists 30 pairs for the GP mint and **every one is item/GP** — zero
+pairs price GP against anything, zero have a USD price, zero have USD liquidity.
+Jupiter returns `NO_ROUTES_FOUND` for GP to SOL. The economy is closed as it
+stands.
 
-That cuts both ways, and the second half matters more:
+What has been said publicly (MidTermDev, 18 Aug 2026) changes the outlook rather
+than the present state:
 
-* Nothing can be cashed out. All profit is GP-denominated, and the alch loop
-  *mints* GP, so it dilutes the very thing it accumulates.
+* GP is the **only** token that will be issued; there is no separate project
+  token. In-game gold becomes on-chain GP once players can log in.
+* **A SOL pair will be created by the admin wallet** when the game goes live,
+  deliberately rather than permissionlessly, to pre-empt malicious pools.
+* Trading it will carry a **2% development tax** against roughly 65 SOL of setup
+  cost for the mint and its ~1,400 Meteora pairs.
+
+That last point is worth checking rather than fearing, because a transfer tax on
+the mint would land inside every quote this bot makes. It does not: the mint
+`123B7bdJzDYGkrAg7i3JUi5TaHYP47dqmSiR5qPRSGP` is **82 bytes owned by
+`TokenkegQ…`** — a classic SPL mint with no Token-2022 extensions, so no transfer
+fee hook exists. Whatever form the 2% takes, it is applied at the SOL pair or in
+the bridge, not silently per swap. Freeze authority is disabled; mint authority
+is the bridge program's `mintAuthorityPda`, which is how in-game gold becomes
+tokens.
+
+So the position today cuts both ways, and the second half still matters more:
+
+* Nothing can be cashed out **yet**. All profit is GP-denominated, and the alch
+  loop *mints* GP, so it dilutes the very thing it accumulates.
 * Nothing has to be paid in either. Entry costs transaction fees and nothing
   else, so accumulation here is close to free optionality on the game becoming
-  something people pay for.
+  something people pay for — and an announced SOL pair is exactly the event that
+  optionality is written against.
 
-If a fiat bridge ever appears it will be a permissionless GP/SOL pool someone
-chooses to fund, or peer-to-peer sales of the tokens themselves. Either way the
-asset worth holding is the **scarce** one — which is why the pipeline ends in
-`accumulate` rather than in a GP balance.
+Either way the asset worth holding is the **scarce** one, not GP: an admin-funded
+GP/SOL pool prices GP against a supply the bridge can mint. That is why the
+pipeline ends in `accumulate` rather than in a GP balance.
 
 ### Measuring scarcity
 

@@ -21,6 +21,12 @@ const shop = (over: Partial<Shop> = {}): Shop => ({
     z: 0,
     stock: {},
     buysAnything: true,
+    // Reachability defaults to true so the pricing tests stay about pricing;
+    // whether a counter can be walked to is `build-money.ts`'s business.
+    safe: true,
+    accessible: true,
+    barrier: null,
+    walkTiles: 0,
     ...over,
 });
 

@@ -68,7 +68,7 @@ const joined = Object.fromEntries(
 const objNames = new Map<number, string>();
 for (const line of readFileSync(join(CONTENT, 'pack', 'obj.pack'), 'utf8').split('\n')) {
     const m = line.match(/^(\d+)=(\S+)/);
-    if (m) objNames.set(Number(m[1]), m[2]);
+    if (m?.[1] && m[2]) objNames.set(Number(m[1]), m[2]);
 }
 const spawned = new Set<string>();
 for (const file of readdirSync(MAPS)) {

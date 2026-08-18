@@ -43,6 +43,7 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 |---|---|
 | `campaign.ts` | **The whole account.** Works out what stage it is at and does the next thing. |
 | `moneymaker.ts` | Funds a fresh account from ground spawns. |
+| `thief.ts` | Picks pockets in Lumbridge and fishes its own food to survive it. |
 | `train-magic.ts` | Trains Magic to a target level, picking the best method available. |
 | `alch-loop.ts` | Alchs a stack of items and optionally withdraws the GP to the wallet. |
 | `lib/spells.ts` | Spell component ids, levels, runes, XP — derived from the game's config. |
@@ -50,9 +51,12 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 | `lib/bridge.ts` | Exchange Clerk dialogue: claim, withdraw GP, withdraw items. |
 | `lib/economics.ts` | Alch values and break-evens, mirroring the Rust `alch` module. |
 | `lib/supply.ts` | Buying runes from shops with no entry requirements. |
+| `lib/thieving.ts` | Pickpocket table, the engine's success roll, and the hitpoint floor. |
+| `lib/forage.ts` | Fish, chop, light, cook: making food where nobody sells any. |
 | `lib/money/` | The ground-spawn circuit, shop pricing, and verified safespots. |
 | `lib/nav/` | Navigation: gazetteer, router, executor. See below. |
 | `tools/build-places.ts` | Regenerates the gazetteer from the game's map data. |
+| `tsconfig.json` | Typechecks this bot. The repo's own config does not cover `bots/`. |
 
 ## Making the first 20,000 GP
 
@@ -85,6 +89,84 @@ is someone else's loot.
 ```sh
 bun bots/<name>/moneymaker.ts --target 20000
 ```
+
+## Thieving: the bootstrap
+
+The fastest money a brand-new account can make, and the only one that needs no
+capital, no levels, no equipment and no walking. A `man3` stands three tiles from
+where `tutorial_complete` teleports you, his pocket always holds exactly three
+coins, and seven attempts in ten succeed at Thieving 1.
+
+```sh
+bun bots/<name>/thief.ts --target 5000
+bun bots/<name>/thief.ts --recover idle --minutes 20
+```
+
+Two things are worth knowing before starting a long run.
+
+**It is members-only.** `attempt_pick_pocket` opens with `if (map_members =
+^false)`, and `map_members` is the **world** flag `Environment.node.members`, not
+a per-zone one. Mercantile's default is `members: true`, so Lumbridge works; on a
+free world none of this does.
+
+**The healing is most of the program.** `~fail_pick_pocket` stuns for eight ticks
+and takes a hitpoint, which at this cadence is **434 damage an hour** against
+**60** of passive regeneration (`settimer(health_regen, 100)` — one hitpoint a
+minute). Left alone the account dies in about four minutes, and `~damage_self`
+queues `player_death` the moment hitpoints hit zero, dropping the coins the run
+exists to collect. `lib/thieving.ts` holds a hard floor of two failures'
+headroom; `--recover` picks how the bill gets paid.
+
+### Recovering: `forage` or `idle`
+
+Buying food is the obvious answer and it does not survive contact with the shop
+table. Of the 64 counters a fresh account can reach, exactly one stocks food —
+Wydin's Food Store in Port Sarim, 283 tiles away, selling **cabbage that heals
+one**, with bread at base stock zero so there is nothing on the shelf.
+
+So `forage` fishes. The circuit is fixed by the map and happens to be tidy:
+
+```
+  Lumbridge (3222,3218)  ── 115 tiles ──▶  swamp shrimp (3267,3148)
+         ▲                                        │
+         └──── 55 ──── tree (3253,3194) ◀── 60 ───┘
+```
+
+That tree sits *exactly* on the straight line home, so the chop, the fire and the
+cook cost **zero detour** — which is why that tree and not one of the other 196 in
+the area. `(3265,3215)` is the equally-free alternative. The tutorial grants the
+bronze axe, tinderbox and small fishing net, so the whole circuit is free to run.
+
+`idle` just stops and waits. At one hitpoint a minute, recovering one minute of
+thieving takes seven minutes of standing still — it is there for accounts with no
+tools and for short supervised runs, not as a real strategy.
+
+### What it actually pays
+
+`mercbot thieve-plan --thieving 1 --fishing 1 --cooking 1` costs the whole thing.
+The ladder, in GP per hour of **wall clock** with the food loop priced in:
+
+| | Thieving | Fishing | Cooking | uptime | net GP/h |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| fresh account | 1 | 1 | 1 | 46% | 1,446 |
+| farmers | 10 | 1 | 1 | 43% | 3,075 |
+| + fishing | 10 | 20 | 1 | 56% | 4,012 |
+| + cooking | 10 | 1 | 34 | 58% | 4,163 |
+| both | 10 | 20 | 34 | 69% | 4,951 |
+
+Two results worth acting on:
+
+* **Thieving 10 is the single biggest upgrade** — a doubling, and it costs about
+  seven minutes of picking men's pockets. Farmers pay nine coins for the same
+  one-hitpoint stun, so they are worth half the hitpoints per 1,000 GP that men
+  are. Everything else on the ladder is a third or less.
+* **Cooking 34 stops the burning.** `cooking_generic_shrimp` rolls
+  `successchance 128,512`, which is 129/256 at level 1 — half the catch is lost —
+  and does not reach a guaranteed 256 until level 34. Below that every cooked
+  shrimp costs two raw ones.
+
+An inventory of 25 shrimp is 75 hitpoints, which is about ten minutes of farmers.
+That short trip length, not the thieving, is what caps the rate.
 
 ## Selling to shops
 
@@ -328,6 +410,16 @@ runes, 1,000–2,000 deep and restocking, with no requirements at all.
   against the real SDK and the spell ids are derived from the game's own config
   and cross-checked against the SDK's published table, but the first run deserves
   a throwaway account and a close eye.
+* **Typecheck with this directory's own config**, not the repo's: `bunx tsc
+  --noEmit -p bots/<name>/tsconfig.json`. The root `tsconfig.json` includes only
+  `*.ts`, `server/gateway/**` and `sdk/**`, so running it against the repo checks
+  none of this and reports success either way. Adding the local config
+  immediately turned up three SDK methods called by names that do not exist
+  (`interactObject`, `useItemOnObject`, `useItemOnItem` — the real ones are
+  `interactLoc`, `useItemOnLoc`, and the `chopTree`/`burnLogs` helpers).
+* **Thieving rates assume a bot that never misclicks.** The cadence model gives a
+  success two ticks and a failure the full eight-tick stun; a real run loses some
+  of that to walking between spawns and to NPCs wandering out of range.
 * **Wallet linking is manual.** The clerk shows a one-time code that has to be
   signed off-line with `bun chain/cli/link-wallet.ts <code>`. `lib/bridge.ts` can
   surface the code; it cannot sign for you.

@@ -31,7 +31,7 @@ function packIds(file: string): Map<string, number> {
     const ids = new Map<string, number>();
     for (const line of readFileSync(join(CONTENT, 'pack', file), 'utf8').split('\n')) {
         const m = line.match(/^(\d+)=(\S+)/);
-        if (m) ids.set(m[2], Number(m[1]));
+        if (m?.[1] && m[2]) ids.set(m[2], Number(m[1]));
     }
     return ids;
 }
@@ -82,13 +82,21 @@ function cluster(spawns: Spawn[], radius = 12): Spawn[] {
         if (near) near.push(spawn);
         else groups.push([spawn]);
     }
-    // Represent each cluster by its centroid, rounded to a tile.
-    return groups.map((g) => ({
-        id: g[0].id,
-        level: g[0].level,
-        x: Math.round(g.reduce((s, o) => s + o.x, 0) / g.length),
-        z: Math.round(g.reduce((s, o) => s + o.z, 0) / g.length),
-    }));
+    // Represent each cluster by its centroid, rounded to a tile. A group is
+    // only ever created around a spawn, so `head` is always there — the guard
+    // is for the compiler, which cannot see that.
+    return groups.flatMap((g) => {
+        const head = g[0];
+        if (!head) return [];
+        return [
+            {
+                id: head.id,
+                level: head.level,
+                x: Math.round(g.reduce((s, o) => s + o.x, 0) / g.length),
+                z: Math.round(g.reduce((s, o) => s + o.z, 0) / g.length),
+            },
+        ];
+    });
 }
 
 const npcIds = packIds('npc.pack');
@@ -104,7 +112,7 @@ const labels = readFileSync(join(MAPS, 'labels.txt'), 'utf8')
     .split('\n')
     .map((line) => line.match(/^=([^,]+),(\d+),(\d+),(\d+)/))
     .filter((m): m is RegExpMatchArray => m !== null)
-    .map((m) => ({ name: m[1].replace(/\//g, ' '), x: Number(m[2]), z: Number(m[3]) }));
+    .map((m) => ({ name: (m[1] ?? '').replace(/\//g, ' '), x: Number(m[2]), z: Number(m[3]) }));
 
 const banks = cluster(spawnsOf(['banker', 'banker2', 'banker3', 'banker4']));
 const undead = cluster(spawnsOf(['skeleton_unarmed', 'skeleton_armed', 'zombie_unarmed', 'zombie2']), 20);

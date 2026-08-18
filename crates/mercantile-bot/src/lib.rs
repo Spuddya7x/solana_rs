@@ -31,6 +31,7 @@ pub mod scarcity;
 pub mod shopflip;
 pub mod strategy;
 pub mod testing;
+pub mod thieving;
 pub mod universe;
 
 pub use config::{Config, Mode};

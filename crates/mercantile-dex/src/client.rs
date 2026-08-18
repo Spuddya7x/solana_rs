@@ -26,6 +26,11 @@ use crate::{DexError, Result};
 
 /// Item and GP mints are both classic SPL Token (not Token-2022) after the
 /// migration described in `chain/cli/swap.ts`.
+///
+/// Verified against the chain rather than inherited from that note: the GP mint
+/// account is 82 bytes owned by this program, with no extension area. That is
+/// what rules out a `TransferFeeConfig` quietly shaving every swap — see
+/// [`mercantile_core::GP_MINT`].
 pub const TOKEN_PROGRAM_ID: Pubkey = spl_token::ID;
 
 /// Reading pool state — the only thing strategies need from the chain.
@@ -302,4 +307,24 @@ fn is_missing_account(err: &solana_client::client_error::ClientError) -> bool {
     // account, so match on the message rather than the error kind.
     let text = err.to_string();
     text.contains("could not find account") || text.contains("Invalid param")
+}
+
+#[cfg(test)]
+mod token_program_tests {
+    use super::*;
+
+    #[test]
+    fn gp_is_a_classic_spl_mint() {
+        // Pinned because the difference is invisible until it costs money: a
+        // Token-2022 mint can carry a transfer fee, and every quote in this
+        // crate assumes the amount sent is the amount received.
+        assert_eq!(
+            TOKEN_PROGRAM_ID.to_string(),
+            "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        );
+        assert_eq!(
+            mercantile_core::GP_MINT.to_string(),
+            "123B7bdJzDYGkrAg7i3JUi5TaHYP47dqmSiR5qPRSGP"
+        );
+    }
 }

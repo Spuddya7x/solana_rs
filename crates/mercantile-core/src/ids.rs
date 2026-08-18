@@ -19,6 +19,17 @@ pub const MERCANTILE_BRIDGE_PROGRAM_ID: Pubkey =
     Pubkey::from_str_const("H5C6RKWQzUdfS8tVzZb3uVcRw3EHCzghv7kWdMBTD2bS");
 
 /// Gielinor GP — the quote asset of every market.
+///
+/// A **classic SPL mint**, not Token-2022: 82 bytes owned by `TokenkegQ…`, with
+/// no extension area and therefore no transfer-fee hook. That matters because
+/// the developer has said trading GP will carry a 2% development tax once the
+/// SOL pair exists; a `TransferFeeConfig` on the mint would silently shrink the
+/// output of every swap this bot quotes, and there is none. Whatever form the
+/// tax takes, it is applied at the pair or in the bridge.
+///
+/// Mint authority is the bridge program's `mintAuthorityPda`
+/// (`7idpyqXCKEtwXhxXkRrF2aqtASSqtRFmxi2nGkKddyKd`), which is how in-game gold
+/// becomes tokens. Freeze authority is disabled.
 pub const GP_MINT: Pubkey = Pubkey::from_str_const("123B7bdJzDYGkrAg7i3JUi5TaHYP47dqmSiR5qPRSGP");
 
 /// GP is a 6-decimal SPL token.

@@ -1,0 +1,8 @@
+{
+  "//": "Typecheck this bot in place: `bunx tsc --noEmit -p bots/<name>/tsconfig.json`. The repo tsconfig's `include` covers sdk/ and the gateway only, so bots are unchecked by default and errors here go unseen until runtime.",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["bun"]
+  },
+  "include": ["**/*.ts", "../../sdk/**/*.ts"]
+}

@@ -55,13 +55,17 @@ describe('requirements', () => {
     });
 });
 
+// `noUncheckedIndexedAccess` makes every `places[n]` optional; name the fixtures
+// once rather than asserting non-null at each use.
+const [P0, P1, , , P4] = places as readonly (typeof places)[number][];
+
 describe('walk costs', () => {
     test('different levels are never walkable', () => {
-        expect(estimateWalkCost(places[0], places[4])).toBeNull();
+        expect(estimateWalkCost(P0!, P4!)).toBeNull();
     });
 
     test('cost is chebyshev distance, the way the game measures movement', () => {
-        expect(estimateWalkCost(places[0], places[1])).toBe(10);
+        expect(estimateWalkCost(P0!, P1!)).toBe(10);
     });
 });
 
@@ -69,13 +73,13 @@ describe('routing', () => {
     test('a nearby place is one walk', () => {
         const route = graph.route(at(100, 100), 'shop', caps())!;
         expect(route.steps).toHaveLength(1);
-        expect(route.steps[0].kind).toBe('walk');
+        expect(route.steps[0]?.kind).toBe('walk');
         expect(route.cost).toBe(10);
     });
 
     test('a teleport beats a long walk when the runes are there', () => {
         const route = graph.route(at(100, 100), 'far_town', caps())!;
-        expect(route.steps[0].kind).toBe('teleport');
+        expect(route.steps[0]?.kind).toBe('teleport');
         expect(route.cost).toBe(8);
     });
 
@@ -88,7 +92,7 @@ describe('routing', () => {
     test('a level change routes through the object that makes it', () => {
         const route = graph.route(at(100, 100), 'cellar', caps())!;
         expect(route.steps.map((s) => s.kind)).toEqual(['walk', 'object']);
-        expect(route.steps[1].link?.object?.name).toEqual(/trapdoor/i);
+        expect(route.steps[1]?.link?.object?.name).toEqual(/trapdoor/i);
     });
 
     test('an unreachable place returns null rather than a wrong route', () => {
@@ -116,7 +120,7 @@ describe('nearest by tag', () => {
     test('a teleport can make a distant bank the nearest one', () => {
         const nearest = graph.nearestTagged(at(400, 400), 'bank', caps())!;
         expect(nearest.place.id).toBe('far_town');
-        expect(nearest.route.steps[0].kind).toBe('teleport');
+        expect(nearest.route.steps[0]?.kind).toBe('teleport');
     });
 
     test('an absent tag yields nothing', () => {

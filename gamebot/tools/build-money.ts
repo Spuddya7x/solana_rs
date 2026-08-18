@@ -70,7 +70,7 @@ function blocks(ext: string): Map<string, string> {
     for (const path of scriptFiles.filter((p) => p.endsWith(ext))) {
         for (const block of readFileSync(path, 'utf8').split(/\n(?=\[)/)) {
             const name = block.match(/^\[(\w+)\]/);
-            if (name) found.set(name[1], block);
+            if (name?.[1]) found.set(name[1], block);
         }
     }
     return found;
@@ -92,12 +92,12 @@ const param = (block: string | undefined, key: string): string | undefined =>
 const objIds = new Map<number, string>();
 for (const line of readFileSync(join(CONTENT, 'pack', 'obj.pack'), 'utf8').split('\n')) {
     const m = line.match(/^(\d+)=(\S+)/);
-    if (m) objIds.set(Number(m[1]), m[2]);
+    if (m?.[1] && m[2]) objIds.set(Number(m[1]), m[2]);
 }
 const npcIds = new Map<number, string>();
 for (const line of readFileSync(join(CONTENT, 'pack', 'npc.pack'), 'utf8').split('\n')) {
     const m = line.match(/^(\d+)=(\S+)/);
-    if (m) npcIds.set(Number(m[1]), m[2]);
+    if (m?.[1] && m[2]) npcIds.set(Number(m[1]), m[2]);
 }
 
 interface Spawn {
@@ -192,7 +192,7 @@ function cluster(list: Spawn[], radius: number): Spawn[][] {
 
 const clusters = cluster(spawns, 12)
     .map((group) => ({
-        level: group[0].level,
+        level: group[0]?.level ?? 0,
         x: Math.round(group.reduce((s, o) => s + o.x, 0) / group.length),
         z: Math.round(group.reduce((s, o) => s + o.z, 0) / group.length),
         items: group.map((o) => ({ item: o.item, cost: o.cost, x: o.x, z: o.z, respawnTicks: o.respawnTicks })),
@@ -209,7 +209,7 @@ for (const [npc, where] of shopNpcs) {
     const stock: Record<string, number> = {};
     for (const line of (inv ?? '').split('\n')) {
         const s = line.match(/^stock\d+=(\w+),(\d+)/);
-        if (s) stock[s[1]] = Number(s[2]);
+        if (s?.[1]) stock[s[1]] = Number(s[2]);
     }
     shops.push({
         npc,
@@ -258,7 +258,7 @@ const HUB = { level: 0, x: 3222, z: 3218 };
 const locIds = new Map<string, number>();
 for (const line of readFileSync(join(CONTENT, 'pack', 'loc.pack'), 'utf8').split('\n')) {
     const m = line.match(/^(\d+)=(\S+)/);
-    if (m) locIds.set(m[2], Number(m[1]));
+    if (m?.[1] && m[2]) locIds.set(m[2], Number(m[1]));
 }
 
 /** Requirement a door imposes, read from the first lines of its `oploc` handler. */
@@ -300,7 +300,7 @@ const gatedLocIds = new Map<number, string>();
 for (const path of scriptFiles.filter((p) => p.endsWith('.rs2'))) {
     for (const block of readFileSync(path, 'utf8').split(/\n(?=\[)/)) {
         const head = block.match(/^\[oploc[12],\s*(\w+)\]/);
-        if (!head) continue;
+        if (!head?.[1]) continue;
         const requirement = gateRequirement(block);
         const id = locIds.get(head[1]);
         if (requirement && id !== undefined) gatedLocIds.set(id, requirement);
@@ -337,8 +337,8 @@ for (const file of readdirSync(MAPS)) {
 function walkTiles(to: { level: number; x: number; z: number }, blocked: DoorInfo[] = []): number | null {
     if (to.level !== HUB.level) return null;
     const path = findLongPath(HUB.level, HUB.x, HUB.z, to.x, to.z, 500, blocked);
-    if (!path.length) return null;
     const end = path[path.length - 1];
+    if (!end) return null;
     if (Math.max(Math.abs(end.x - to.x), Math.abs(end.z - to.z)) > 2) return null;
     let tiles = 0;
     let prev = { x: HUB.x, z: HUB.z };
