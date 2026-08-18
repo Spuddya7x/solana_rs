@@ -34,7 +34,14 @@ export const SPELLS = {
     WATER_STRIKE: { component: 1154, level: 5, xp: 7.5, runes: { waterrune: 1, airrune: 1, mindrune: 1 }, ticks: 5 },
     EARTH_STRIKE: { component: 1156, level: 9, xp: 9.5, runes: { earthrune: 2, airrune: 1, mindrune: 1 }, ticks: 5 },
     FIRE_STRIKE: { component: 1158, level: 13, xp: 11.5, runes: { firerune: 3, airrune: 2, mindrune: 1 }, ticks: 5 },
-    CURSE: { component: 1161, level: 19, xp: 29, runes: { waterrune: 2, earthrune: 1, bodyrune: 1 }, ticks: 5 },
+    /**
+     * The stat-reduction spells are the XP of the early game — and they are only
+     * repeatable on one NPC while every cast misses, because a landed debuff
+     * blocks the next cast until the NPC's stats restore. See `lib/splash.ts`.
+     */
+    CONFUSE: { component: 1153, level: 3, xp: 13, runes: { bodyrune: 1, waterrune: 3, earthrune: 2 }, ticks: 5 },
+    WEAKEN: { component: 1157, level: 11, xp: 21, runes: { bodyrune: 1, waterrune: 3, earthrune: 2 }, ticks: 5 },
+    CURSE: { component: 1161, level: 19, xp: 29, runes: { bodyrune: 1, waterrune: 2, earthrune: 3 }, ticks: 5 },
     /** 0.4 x cost, and the fastest cast in the game at 3 ticks. */
     LOW_ALCHEMY: { component: 1162, level: 21, xp: 31, runes: { naturerune: 1, firerune: 3 }, ticks: 3 },
     SUPERHEAT: { component: 1173, level: 43, xp: 53, runes: { naturerune: 1, firerune: 4 }, ticks: 5 },
@@ -72,19 +79,28 @@ export function castsToLevel(spell: SpellInfo, fromXp: number, targetLevel: numb
 }
 
 /**
- * The best spell available at a given Magic level for *training*, given what the
- * bot can pay for.
+ * The best spell available at a given Magic level for *training*.
  *
- * Low alchemy is the standout once it unlocks: 31 XP a cast at 3 ticks — the
- * fastest cast in the game — and it pays 0.4 x cost, which is more than the
- * 0.36 x cost an item takes to buy at its on-chain floor. Training pays for
- * itself from level 21 onwards, so the only real grind is 1 to 21.
+ * Two regimes, and the switch between them is the whole plan:
+ *
+ * * **Below 21** — splash a stat-reduction spell. Curse is 29 XP a cast against
+ *   Wind Strike's 5.5, and it stays castable on the same NPC indefinitely as
+ *   long as every cast misses (see `lib/splash.ts`).
+ * * **21 and up** — Low Level Alchemy: 31 XP at 3 ticks, the fastest cast in the
+ *   game, and it pays `0.4 x cost` for an item that costs `0.36 x cost` at its
+ *   on-chain floor. Training stops costing money and starts making it.
  */
 export function bestTrainingSpell(magicLevel: number, canAlch: boolean): SpellInfo {
     if (canAlch && magicLevel >= SPELLS.LOW_ALCHEMY.level) return SPELLS.LOW_ALCHEMY;
     if (magicLevel >= SPELLS.CURSE.level) return SPELLS.CURSE;
-    if (magicLevel >= SPELLS.FIRE_STRIKE.level) return SPELLS.FIRE_STRIKE;
-    if (magicLevel >= SPELLS.EARTH_STRIKE.level) return SPELLS.EARTH_STRIKE;
-    if (magicLevel >= SPELLS.WATER_STRIKE.level) return SPELLS.WATER_STRIKE;
+    if (magicLevel >= SPELLS.WEAKEN.level) return SPELLS.WEAKEN;
+    if (magicLevel >= SPELLS.CONFUSE.level) return SPELLS.CONFUSE;
     return SPELLS.WIND_STRIKE;
+}
+
+/** Whether a spell's XP depends on missing — i.e. whether to splash it. */
+export function shouldSplash(spell: SpellInfo): boolean {
+    return (
+        spell === SPELLS.CONFUSE || spell === SPELLS.WEAKEN || spell === SPELLS.CURSE
+    );
 }

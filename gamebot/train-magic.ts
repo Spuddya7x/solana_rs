@@ -1,28 +1,33 @@
 /**
- * Train Magic to the level High Level Alchemy needs.
+ * Train Magic to the level High Level Alchemy needs — and then past it.
  *
- * The route, and why:
+ * The route, and why each leg is what it is:
  *
- * * **1 to 21** — combat spells on a low-level NPC. Slow (5.5 to 11.5 XP a cast)
- *   and it costs runes, but it is only 5,018 XP. Splashing counts: the SDK treats
- *   Magic XP as the evidence a cast landed, so a miss still trains.
- * * **21 to 55** — Low Level Alchemy, and this is the part worth understanding.
- *   It is the fastest cast in the game at 3 ticks, gives 31 XP, and pays
- *   `0.4 x cost` for the item it destroys. An item bought at its on-chain floor
- *   cost `0.36 x cost`. So from level 21 the training **pays for itself**, and on
- *   expensive items it is outright profitable — 161,142 XP is about 5,200 casts,
- *   which is roughly two and a half hours.
+ * * **1 to 3** — Wind Strike, 5.5 XP a cast. 174 XP, about 32 casts. The only
+ *   genuinely wasted minute in the whole plan.
+ * * **3 to 21** — **splash** Confuse, then Weaken, then Curse: 13, 21 and 29 XP
+ *   a cast against Wind Strike's 5.5. These spells refuse to cast on an NPC
+ *   whose stats are already lowered, so they are only repeatable while every
+ *   cast *misses* — which a bronze kit guarantees. See `lib/splash.ts`. About
+ *   250 casts, a quarter of an hour, and roughly 6,000 GP of runes from Aubury.
+ * * **21 to 55** — Low Level Alchemy on items bought at their on-chain floor.
+ *   31 XP at 3 ticks, and it pays `0.4 x cost` for items that cost
+ *   `0.36 x cost`. This leg funds itself.
+ * * **55 to 66** — keep going, now with High Level Alchemy, which pays
+ *   `0.6 x cost` at 65 XP a cast. 66 is not an arbitrary target: it is the
+ *   Wizards' Guild door, and the guild sells **1,000 restocking nature runes**.
+ *   Until then the only rune supply is a hundred-unit on-chain pool, so 66 is
+ *   what turns this from a trickle into an operation.
  *
- * Feed it items with `mercbot`: buy a stack near the floor, bridge them in
- * through the Exchange Clerk, and let this burn through them.
- *
- * Usage (from a mercantile checkout, with this directory linked into `bots/`):
+ * Usage (from a mercantile checkout, with this directory copied into `bots/`):
+ *   bun bots/<name>/train-magic.ts --target 21 --npc chicken
  *   bun bots/<name>/train-magic.ts --target 55 --alch "rune platebody"
  */
 
 import { runScript } from '../../sdk/runner';
 import { alchInventory, missingRunes } from './lib/alch';
-import { SPELLS, bestTrainingSpell, castSeconds, castsToLevel, xpForLevel } from './lib/spells';
+import { SPELLS, bestTrainingSpell, castSeconds, castsToLevel, shouldSplash, xpForLevel } from './lib/spells';
+import { SPLASH_KIT, equippedMagicAttack, splashGuaranteed, unwornKit } from './lib/splash';
 
 const args = process.argv.slice(2);
 const flag = (name: string, fallback: string) => {
@@ -31,14 +36,17 @@ const flag = (name: string, fallback: string) => {
 };
 
 const TARGET_LEVEL = Number(flag('target', '55'));
-/** Items to low-alch, most preferred first. */
+/** Items to low-alch once level 21 is in hand, most preferred first. */
 const ALCH_TARGETS = flag('alch', '').split(',').map((s) => s.trim()).filter(Boolean);
-/** NPC to cast combat spells at while below level 21. */
+/** What to splash. Anything harmless and reliably present will do. */
 const SPLASH_TARGET = flag('npc', 'chicken');
+/** Refuse to cast a stat-reduction spell without the gear to guarantee a miss. */
+const REQUIRE_SPLASH_GEAR = !args.includes('--allow-hits');
 
 await runScript(async ({ bot, sdk }) => {
     await bot.skipTutorial();
     await sdk.waitForReady();
+    await equipSplashKit();
 
     for (;;) {
         const magic = sdk.getSkill('magic');
@@ -53,13 +61,16 @@ await runScript(async ({ bot, sdk }) => {
         const remaining = castsToLevel(spell, magic.experience, TARGET_LEVEL);
         console.log(
             `magic ${magic.level} (${Math.floor(magic.experience)} xp) — ` +
-                `${remaining} casts of ${spellName(spell.component)} to ${TARGET_LEVEL}, ` +
+                `${remaining} casts of ${spellName(spell)} to ${TARGET_LEVEL}, ` +
                 `about ${((remaining * castSeconds(spell)) / 3600).toFixed(1)}h`,
         );
 
         const missing = missingRunes(sdk, spell);
         if (missing.length > 0) {
-            console.log(`out of ${missing.join(', ')} — restock and run again`);
+            console.log(
+                `out of ${missing.join(', ')} — Aubury (Varrock) and Betty (Port Sarim) both ` +
+                    `stock air, water, earth, mind and body runes with no requirements`,
+            );
             return { level: magic.level, blocked: missing };
         }
 
@@ -72,45 +83,78 @@ await runScript(async ({ bot, sdk }) => {
                 },
             });
             console.log(`  ${result.reason}: ${result.message}`);
-            if (result.reason !== 'out_of_targets' || result.casts === 0) {
-                // Out of items is the one case worth looping on — the caller can
-                // top the inventory up. Anything else needs a human.
-                return { level: sdk.getSkill('magic')?.level, ...result };
-            }
+            // Out of items is the normal end of a pass: buy more with mercbot,
+            // bridge them in, and run this again.
             return { level: sdk.getSkill('magic')?.level, ...result };
         }
 
-        // Below level 21: cast at something harmless until the next threshold.
+        const splashing = shouldSplash(spell);
+        if (splashing && REQUIRE_SPLASH_GEAR && !splashGuaranteed(sdk)) {
+            const bonus = equippedMagicAttack(sdk);
+            console.log(
+                `magic attack bonus is ${bonus}; ${spellName(spell)} needs -64 or worse to be ` +
+                    `sure of missing. Wear ${SPLASH_KIT.join(', ')} (about 400 gp of shop value, ` +
+                    `-69 together), or pass --allow-hits to train anyway.`,
+            );
+            return { level: magic.level, blocked: 'splash gear' };
+        }
+
         const nextLevel = Math.min(TARGET_LEVEL, nextThreshold(magic.level));
-        console.log(`  casting at ${SPLASH_TARGET} until magic ${nextLevel}`);
+        console.log(
+            `  ${splashing ? 'splashing' : 'casting'} ${spellName(spell)} at ${SPLASH_TARGET} until magic ${nextLevel}`,
+        );
         const stopAt = xpForLevel(nextLevel);
         let casts = 0;
+        let hits = 0;
         while ((sdk.getSkill('magic')?.experience ?? 0) < stopAt) {
             const result = await bot.castSpell(SPLASH_TARGET, spell.component);
             if (!result.success) {
                 console.log(`  cast failed (${result.reason ?? 'unknown'}): ${result.message}`);
-                if (result.reason === 'no_runes') return { level: sdk.getSkill('magic')?.level, blocked: 'runes' };
-                // A missing or dead target is worth retrying; the NPC respawns.
+                if (result.reason === 'no_runes') {
+                    return { level: sdk.getSkill('magic')?.level, blocked: 'runes' };
+                }
+                // A dead or missing target is worth waiting out; chickens respawn.
                 await new Promise((resolve) => setTimeout(resolve, 2_000));
                 continue;
             }
             casts += 1;
-            if (casts % 25 === 0) {
-                console.log(`  ${casts} casts, magic ${sdk.getSkill('magic')?.level}`);
+            if (result.hit) hits += 1;
+            // A landed stat-reduction spell debuffs the NPC, and every following
+            // cast is refused until it restores — so a hit is a warning, not a bonus.
+            if (splashing && result.hit && hits === 1) {
+                console.log(
+                    `  landed a hit — the target is now debuffed and will refuse the next cast. ` +
+                        `Check the splash kit (bonus ${equippedMagicAttack(sdk)}).`,
+                );
             }
+            if (casts % 25 === 0) {
+                console.log(`  ${casts} casts (${hits} landed), magic ${sdk.getSkill('magic')?.level}`);
+            }
+        }
+    }
+
+    /** Wear whatever splash gear is in the inventory. */
+    async function equipSplashKit(): Promise<void> {
+        for (const piece of unwornKit(sdk)) {
+            const worn = await bot.equipItem(new RegExp(`^${piece}$`, 'i'));
+            console.log(`  equip ${piece}: ${worn.success ? 'ok' : worn.message}`);
+        }
+        const bonus = equippedMagicAttack(sdk);
+        if (bonus < 0) {
+            console.log(`magic attack bonus ${bonus} (${bonus <= -64 ? 'splash guaranteed' : 'hits still possible'})`);
         }
     }
 });
 
 /** The next level at which a better training option unlocks. */
 function nextThreshold(level: number): number {
-    for (const threshold of [5, 9, 13, 19, 21, 55]) {
+    for (const threshold of [3, 11, 19, 21, 55, 66]) {
         if (level < threshold) return threshold;
     }
-    return 55;
+    return 99;
 }
 
-function spellName(component: number): string {
-    const found = Object.entries(SPELLS).find(([, spell]) => spell.component === component);
-    return found ? found[0].toLowerCase().replace(/_/g, ' ') : `component ${component}`;
+function spellName(spell: { component: number }): string {
+    const found = Object.entries(SPELLS).find(([, s]) => s.component === spell.component);
+    return found ? found[0].toLowerCase().replace(/_/g, ' ') : `component ${spell.component}`;
 }

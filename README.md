@@ -93,6 +93,26 @@ does lands in an append-only JSONL journal that `mercbot report` summarises.
 
 `mercbot strategies` describes them; `mercbot.example.toml` configures them.
 
+## Getting an account to level 55
+
+The bot that buys is useless without an account that can alch. That is
+`gamebot/`'s job, and the route is short:
+
+| Range | Method | Cost |
+|---|---|---|
+| 1 → 21 | Splash Confuse/Weaken/Curse on a chicken in a bronze kit | ~15 minutes, ~6,000 GP of runes |
+| 21 → 55 | Low alchemy on floor-priced items (`0.4 × cost` out, `0.36 × cost` in) | funds itself |
+| 55 → 66 | High alchemy, which is the business anyway | profitable throughout |
+
+Splashing works because the engine pays spell XP *before* the hit roll, and
+because a landed stat-reduction spell debuffs the target and blocks the next
+cast — so missing is what keeps the grind going. A −64 magic attack bonus
+guarantees the miss, and a full bronze kit is −69 for 399 GP.
+
+Level 66 matters more than 55: it is the Wizards' Guild door, and the guild is
+the only unbounded nature rune supply in the game. On-chain rune pools hold 100
+units, which is about 20 casts before impact bites.
+
 ## Two things about this market that cost money to learn
 
 **The floor is a price, not a bid.** Pools are seeded single-sided, so the GP a

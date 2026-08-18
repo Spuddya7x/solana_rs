@@ -50,11 +50,47 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 
 ## The training route, and why it is nearly free
 
-| Range | Method | Why |
+| Range | Method | XP/cast | Why |
+|---|---|---|---|
+| 1 → 3 | Wind Strike | 5.5 | 174 XP, ~32 casts. The only wasted minute in the plan. |
+| 3 → 21 | **Splash** Confuse → Weaken → Curse | 13 / 21 / 29 | See below. ~250 casts, about **15 minutes**, ~6,000 GP of runes. |
+| 21 → 55 | **Low Level Alchemy** | 31 | 3 ticks — the fastest cast in the game — and it pays `0.4 × cost` for an item that cost `0.36 × cost` at the pool floor. This leg **funds itself**. |
+| 55 → 66 | **High Level Alchemy** | 65 | Every cast is already profitable, and 66 opens the Wizards' Guild — see *Runes*. |
+
+### Splashing, and why it is the fast route
+
+Stat-reduction spells are worth three to five times a strike spell at the same
+level, and they are only repeatable if you keep **missing**. Three things in the
+engine make that work, each checked in the server scripts rather than assumed:
+
+1. **XP is paid before the hit roll.** `pvm_default_spell` calls `~pvm_spell_cast`
+   — runes deleted, `~give_spell_xp` paid — and *then* rolls for the hit. A
+   splash keeps the full base XP.
+2. **A splash never applies the debuff.** `~pvm_stat_change_effect` runs only on
+   the success branch, and `~pvm_debuff_allowed` refuses to cast on an NPC whose
+   stat is already lowered ("Your foe's attack has already been weakened"). So a
+   *landed* Curse is what stops you training. Miss forever and one chicken lasts
+   the whole grind.
+3. **A magic attack bonus of −64 or worse guarantees the miss.** The roll is
+   `effective_magic × (bonus + 64)`, and a hit needs
+   `randominc(attack) > randominc(defence)`. At −64 the attack roll is zero or
+   negative and can never win.
+
+The kit, and the nice part — the magic penalty does not scale with tier, so
+bronze is as good as rune at a four-hundredth of the price:
+
+| Piece | Magic attack | Shop value |
 |---|---|---|
-| 1 → 21 | Combat spells on a chicken | 5,018 XP. Slow, costs runes, unavoidable. Splashing still trains — Magic XP is granted whether or not the spell hits. |
-| 21 → 55 | **Low Level Alchemy** | 31 XP a cast at **3 ticks** — the fastest cast in the game — and it pays `0.4 × cost` for an item that cost `0.36 × cost` at the pool floor. Training from here **pays for itself**, and on expensive items it profits outright. |
-| 55+ | **High Level Alchemy** | 65 XP and `0.6 × cost`. 5 ticks a cast, so 1,200 casts an hour. |
+| Bronze platebody | −30 | 160 |
+| Bronze platelegs | −21 | 80 |
+| Bronze kiteshield | −8 | 68 |
+| Bronze full helm | −6 | 44 |
+| Bronze warhammer | −4 | 47 |
+| **Total** | **−69** | **399** |
+
+`train-magic.ts` equips whatever it finds in the inventory, refuses to cast a
+stat-reduction spell without the bonus (pass `--allow-hits` to override), and
+warns if a cast ever lands.
 
 161,142 XP separates 21 from 55: about 5,200 low alchs, roughly two and a half
 hours of casting. Feed it with `mercbot`:
@@ -74,17 +110,20 @@ equipped — buy the staff once and the fire runes stop mattering.
 
 Nature runes are the recurring cost, and the supply routes are worth knowing:
 
-* **On chain.** Nature runes are a tokenised item like any other, floor `7.2 GP`.
-  Buy them with `mercbot` and bridge them in. This is the only route that needs
-  no levels at all, and the reason the loop closes.
-* **Wizards' Guild (Yanille).** 1,000 in stock, restocking — but the door checks
-  for **66 Magic**, which is well past the 55 the spell itself needs.
+* **On chain.** Nature runes are a tokenised item like any other, floor `7.2 GP`
+  — but every pool is seeded with just **100 units**, runes included, so this is
+  a trickle, not a supply. Live right now: 20 runes cost 11.3 GP each (29% price
+  impact) and 60 cost 25.8 each (197%). Good for bootstrapping ~20 casts at a
+  time; useless for running a business.
+* **Wizards' Guild (Yanille).** 1,000 in stock, restocking, and the *only*
+  unbounded source — but the door checks for **66 Magic**. That is 330,094 XP
+  past level 55, about 5,100 high alchs, and every one of them already pays. It
+  is the real target.
 * **Runecrafting.** Level 44, and a different grind entirely.
 
-At 7 GP a rune, an item pays for its own cast above roughly 30 GP of shop cost,
-so the constraint is not the runes — it is pool inventory. Each pool holds about
-a hundred items, and buying more than about a fifth of one moves the price enough
-to eat the margin. `mercbot alch-scan` sizes that for you.
+The elemental runes for the training grind have no such problem: **Aubury**
+(Varrock) and **Betty** (Port Sarim) both stock air, water, earth, mind and body
+runes, 1,000–2,000 deep and restocking, with no requirements at all.
 
 ## Honest limits
 
