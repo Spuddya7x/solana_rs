@@ -26,7 +26,14 @@
 
 import { runScript } from '../../sdk/runner';
 import { alchInventory, missingRunes } from './lib/alch';
-import { SPELLS, bestTrainingSpell, castSeconds, castsToLevel, shouldSplash, xpForLevel } from './lib/spells';
+import {
+    SPELLS,
+    bestTrainingSpell,
+    castSeconds,
+    castsToLevel,
+    shouldSplash,
+    xpForLevel,
+} from './lib/spells';
 import { SPLASH_KIT, equippedMagicAttack, splashGuaranteed, unwornKit } from './lib/splash';
 
 const args = process.argv.slice(2);
@@ -40,6 +47,11 @@ const TARGET_LEVEL = Number(flag('target', '55'));
 const ALCH_TARGETS = flag('alch', '').split(',').map((s) => s.trim()).filter(Boolean);
 /** What to splash. Anything harmless and reliably present will do. */
 const SPLASH_TARGET = flag('npc', 'chicken');
+/**
+ * An undead target to splash Crumble Undead on from level 39 — a skeleton or
+ * zombie in the Varrock sewers, say. Without one the ladder tops out at Curse.
+ */
+const UNDEAD_TARGET = flag('undead', '');
 /** Refuse to cast a stat-reduction spell without the gear to guarantee a miss. */
 const REQUIRE_SPLASH_GEAR = !args.includes('--allow-hits');
 
@@ -57,7 +69,7 @@ await runScript(async ({ bot, sdk }) => {
         }
 
         const alchable = ALCH_TARGETS.some((pattern) => sdk.findInventoryItem(pattern));
-        const spell = bestTrainingSpell(magic.level, alchable);
+        const spell = bestTrainingSpell(magic.level, alchable, UNDEAD_TARGET !== '');
         const remaining = castsToLevel(spell, magic.experience, TARGET_LEVEL);
         console.log(
             `magic ${magic.level} (${Math.floor(magic.experience)} xp) — ` +
@@ -100,14 +112,16 @@ await runScript(async ({ bot, sdk }) => {
         }
 
         const nextLevel = Math.min(TARGET_LEVEL, nextThreshold(magic.level));
+        // Crumble Undead only affects skeletons, zombies, ghosts and shades.
+        const target = spell === SPELLS.CRUMBLE_UNDEAD ? UNDEAD_TARGET : SPLASH_TARGET;
         console.log(
-            `  ${splashing ? 'splashing' : 'casting'} ${spellName(spell)} at ${SPLASH_TARGET} until magic ${nextLevel}`,
+            `  ${splashing ? 'splashing' : 'casting'} ${spellName(spell)} at ${target} until magic ${nextLevel}`,
         );
         const stopAt = xpForLevel(nextLevel);
         let casts = 0;
         let hits = 0;
         while ((sdk.getSkill('magic')?.experience ?? 0) < stopAt) {
-            const result = await bot.castSpell(SPLASH_TARGET, spell.component);
+            const result = await bot.castSpell(target, spell.component);
             if (!result.success) {
                 console.log(`  cast failed (${result.reason ?? 'unknown'}): ${result.message}`);
                 if (result.reason === 'no_runes') {
@@ -148,7 +162,7 @@ await runScript(async ({ bot, sdk }) => {
 
 /** The next level at which a better training option unlocks. */
 function nextThreshold(level: number): number {
-    for (const threshold of [3, 11, 19, 21, 55, 66]) {
+    for (const threshold of [3, 11, 19, 21, 39, 55, 66]) {
         if (level < threshold) return threshold;
     }
     return 99;

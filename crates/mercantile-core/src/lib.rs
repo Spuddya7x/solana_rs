@@ -10,6 +10,7 @@
 pub mod alch;
 pub mod amounts;
 pub mod ids;
+pub mod magic;
 pub mod registry;
 
 pub use alch::{high_alch_value, low_alch_value, HIGH_ALCH_LEVEL, HIGH_ALCH_MULT, LOW_ALCH_MULT};

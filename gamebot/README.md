@@ -50,12 +50,45 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 
 ## The training route, and why it is nearly free
 
-| Range | Method | XP/cast | Why |
-|---|---|---|---|
-| 1 → 3 | Wind Strike | 5.5 | 174 XP, ~32 casts. The only wasted minute in the plan. |
-| 3 → 21 | **Splash** Confuse → Weaken → Curse | 13 / 21 / 29 | See below. ~250 casts, about **15 minutes**, ~6,000 GP of runes. |
-| 21 → 55 | **Low Level Alchemy** | 31 | 3 ticks — the fastest cast in the game — and it pays `0.4 × cost` for an item that cost `0.36 × cost` at the pool floor. This leg **funds itself**. |
-| 55 → 66 | **High Level Alchemy** | 65 | Every cast is already profitable, and 66 opens the Wizards' Guild — see *Runes*. |
+Run `mercbot magic-plan --to 55` for the current numbers. Two routes, and the
+choice between them is really a choice about rune supply:
+
+**Route A — splashing, self-sufficient.** Every rune comes from Aubury or Betty,
+who have no entry requirements and restock. Nothing else is needed.
+
+| Range | Spell | XP/cast | Casts | Time | Runes |
+|---|---|---|---|---|---|
+| 1 → 3 | Wind Strike | 5.5 | 32 | 2 min | 224 GP |
+| 3 → 11 | Splash Confuse | 13 | 91 | 5 min | 2,093 GP |
+| 11 → 19 | Splash Weaken | 21 | 125 | 6 min | 2,875 GP |
+| 19 → 39 | Splash Curse | 29 | 1,023 | 51 min | 23,529 GP |
+| 39 → 55 | Splash **Crumble Undead** | 49 | 2,714 | 2.3 h | 84,134 GP |
+| | | | **3,985** | **3.3 h** | **113,000 GP** |
+
+Crumble Undead is the standout: 49 XP a cast on shop-bought chaos, air and earth
+runes — the best XP *per GP* in the game below 66, and the best XP per hour that
+needs no nature runes. It only affects skeletons, zombies, ghosts and shades, so
+it wants the Varrock sewers rather than a chicken.
+
+**Route B — alchemy, faster and cheaper but supply-gated.**
+
+| Range | Spell | XP/cast | Casts | Time |
+|---|---|---|---|---|
+| 1 → 21 | as above | | 284 | 14 min |
+| 21 → 55 | **Low Level Alchemy** | 31 | 5,214 | 2.6 h |
+| | | | **5,498** | **2.8 h** |
+
+Half an hour quicker, and the rune bill is ~51,000 GP instead of ~113,000 —
+before counting the `0.4 × cost` each alch pays *back*, which makes it outright
+profitable on items above ~220 GP of shop cost. The catch is in the casts
+column: **5,214 nature runes and 5,214 items**. On-chain rune pools hold 100
+units, so this route is gated on a rune supply that does not exist below 66
+Magic unless you runecraft (level 44, and the world runs members content).
+
+Route A is what a fresh account actually does. Route B is what you switch to
+once the Wizards' Guild is open.
+
+| 55 → 66 | **High Level Alchemy** | 65 XP | Every cast already profitable, and 66 opens the guild — see *Runes*. |
 
 ### Splashing, and why it is the fast route
 
@@ -92,14 +125,19 @@ bronze is as good as rune at a four-hundredth of the price:
 stat-reduction spell without the bonus (pass `--allow-hits` to override), and
 warns if a cast ever lands.
 
-161,142 XP separates 21 from 55: about 5,200 low alchs, roughly two and a half
+Splashing needs **no nature runes** — Confuse, Weaken and Curse take only body,
+water and earth, and Crumble Undead takes chaos, air and earth. Nature runes are
+purely an *alchemy* cost.
+
+161,618 XP separates 21 from 55: about 5,200 low alchs, roughly two and a half
 hours of casting. Feed it with `mercbot`:
 
 ```sh
 mercbot alch-scan --limit 20                       # pick a target
 mercbot run --once                                 # buy near the floor
 # bridge in through the Exchange Clerk, then:
-bun bots/alchbot/train-magic.ts --target 55 --alch "rune platebody"
+bun bots/alchbot/train-magic.ts --target 39 --npc chicken
+bun bots/alchbot/train-magic.ts --target 55 --undead skeleton
 bun bots/alchbot/alch-loop.ts --alch "rune platebody" --claim --withdraw-gp
 ```
 
@@ -119,7 +157,9 @@ Nature runes are the recurring cost, and the supply routes are worth knowing:
   unbounded source — but the door checks for **66 Magic**. That is 330,094 XP
   past level 55, about 5,100 high alchs, and every one of them already pays. It
   is the real target.
-* **Runecrafting.** Level 44, and a different grind entirely.
+* **Runecrafting.** Level 44 Runecrafting at the Nature Altar, unbounded and
+  free once you are there. The world runs members content by default, so this is
+  open — it is simply a second grind.
 
 The elemental runes for the training grind have no such problem: **Aubury**
 (Varrock) and **Betty** (Port Sarim) both stock air, water, earth, mind and body

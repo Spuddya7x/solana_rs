@@ -98,20 +98,35 @@ does lands in an append-only JSONL journal that `mercbot report` summarises.
 The bot that buys is useless without an account that can alch. That is
 `gamebot/`'s job, and the route is short:
 
-| Range | Method | Cost |
-|---|---|---|
-| 1 → 21 | Splash Confuse/Weaken/Curse on a chicken in a bronze kit | ~15 minutes, ~6,000 GP of runes |
-| 21 → 55 | Low alchemy on floor-priced items (`0.4 × cost` out, `0.36 × cost` in) | funds itself |
-| 55 → 66 | High alchemy, which is the business anyway | profitable throughout |
+`mercbot magic-plan` computes the route; `gamebot/train-magic.ts` walks it.
 
-Splashing works because the engine pays spell XP *before* the hit roll, and
-because a landed stat-reduction spell debuffs the target and blocks the next
-cast — so missing is what keeps the grind going. A −64 magic attack bonus
-guarantees the miss, and a full bronze kit is −69 for 399 GP.
+```
+$ mercbot magic-plan --to 55
+cheapest route, magic 1 to 55:
+  spell             levels     casts   hours    rune GP  cast on
+  wind strike        1-11        247     0.2       1729  any npc
+  weaken            11-19        125     0.1       2875   splash
+  curse             19-39       1023     0.9      23529   splash
+  crumble undead    39-55       2714     2.3      84134   undead
+  total: 4109 casts, 3.4 hours, 112267 GP of runes
+```
 
-Level 66 matters more than 55: it is the Wizards' Guild door, and the guild is
-the only unbounded nature rune supply in the game. On-chain rune pools hold 100
-units, which is about 20 casts before impact bites.
+**3.3 hours and ~113,000 GP of runes, entirely from open shops** — Aubury and
+Betty stock every rune this route needs, 1,000+ deep and restocking, with no
+requirements. Splashing needs no nature runes at all.
+
+Two things make it work, both read out of the engine rather than assumed. Spell
+XP is paid *before* the hit roll, so a splash trains at full rate. And a *landed*
+stat-reduction spell debuffs the target, which blocks the next cast — so missing
+is what sustains the grind. A −64 magic attack bonus guarantees the miss; a full
+bronze kit is −69, for 399 GP, because the penalty does not scale with tier.
+
+Allowing alchemy (`--with-alchemy`) is faster and cheaper still — 2.8 hours,
+~51,000 GP, and profitable on items above ~220 GP of shop cost — but it needs
+5,214 nature runes and 5,214 items. On-chain rune pools hold 100 units, so that
+route only opens at **66 Magic**, the Wizards' Guild door and the game's only
+unbounded nature rune supply. 66 is the real target; 55 is where the paying
+starts.
 
 ## Two things about this market that cost money to learn
 

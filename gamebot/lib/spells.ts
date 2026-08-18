@@ -42,6 +42,13 @@ export const SPELLS = {
     CONFUSE: { component: 1153, level: 3, xp: 13, runes: { bodyrune: 1, waterrune: 3, earthrune: 2 }, ticks: 5 },
     WEAKEN: { component: 1157, level: 11, xp: 21, runes: { bodyrune: 1, waterrune: 3, earthrune: 2 }, ticks: 5 },
     CURSE: { component: 1161, level: 19, xp: 29, runes: { bodyrune: 1, waterrune: 2, earthrune: 3 }, ticks: 5 },
+    /**
+     * 49 XP a cast on shop-bought runes — the best XP per GP in the game below
+     * 66, and the best XP per hour available without nature runes. Only affects
+     * skeletons, zombies, ghosts and shades (`npc_param(undead)`), so it needs
+     * the Varrock sewers or Draynor Manor rather than a chicken.
+     */
+    CRUMBLE_UNDEAD: { component: 1171, level: 39, xp: 49, runes: { chaosrune: 1, airrune: 2, earthrune: 2 }, ticks: 5 },
     /** 0.4 x cost, and the fastest cast in the game at 3 ticks. */
     LOW_ALCHEMY: { component: 1162, level: 21, xp: 31, runes: { naturerune: 1, firerune: 3 }, ticks: 3 },
     SUPERHEAT: { component: 1173, level: 43, xp: 53, runes: { naturerune: 1, firerune: 4 }, ticks: 5 },
@@ -62,7 +69,7 @@ export function castSeconds(spell: SpellInfo): number {
 /**
  * XP needed for a level, using the standard RuneScape curve.
  *
- * Level 55 (High Level Alchemy) is 166,160 XP; level 21 (Low Level Alchemy) is 5,018.
+ * Level 55 (High Level Alchemy) is 166,636 XP; level 21 (Low Level Alchemy) is 5,018.
  */
 export function xpForLevel(level: number): number {
     let points = 0;
@@ -86,12 +93,22 @@ export function castsToLevel(spell: SpellInfo, fromXp: number, targetLevel: numb
  * * **Below 21** — splash a stat-reduction spell. Curse is 29 XP a cast against
  *   Wind Strike's 5.5, and it stays castable on the same NPC indefinitely as
  *   long as every cast misses (see `lib/splash.ts`).
- * * **21 and up** — Low Level Alchemy: 31 XP at 3 ticks, the fastest cast in the
- *   game, and it pays `0.4 x cost` for an item that costs `0.36 x cost` at its
- *   on-chain floor. Training stops costing money and starts making it.
+ * * **39 and up, without nature runes** — Crumble Undead on a splashed skeleton:
+ *   49 XP a cast on shop-bought chaos, air and earth runes. The best XP per GP
+ *   in the game below 66, and the fastest thing that needs no nature runes.
+ * * **21 and up, with nature runes and items** — Low Level Alchemy: 31 XP at
+ *   3 ticks, the fastest cast in the game, and it pays `0.4 x cost` for an item
+ *   that costs `0.36 x cost` at its on-chain floor. Training stops costing money
+ *   and starts making it — but it needs one nature rune and one item per cast,
+ *   which is thousands of both.
  */
-export function bestTrainingSpell(magicLevel: number, canAlch: boolean): SpellInfo {
+export function bestTrainingSpell(
+    magicLevel: number,
+    canAlch: boolean,
+    canReachUndead = false,
+): SpellInfo {
     if (canAlch && magicLevel >= SPELLS.LOW_ALCHEMY.level) return SPELLS.LOW_ALCHEMY;
+    if (canReachUndead && magicLevel >= SPELLS.CRUMBLE_UNDEAD.level) return SPELLS.CRUMBLE_UNDEAD;
     if (magicLevel >= SPELLS.CURSE.level) return SPELLS.CURSE;
     if (magicLevel >= SPELLS.WEAKEN.level) return SPELLS.WEAKEN;
     if (magicLevel >= SPELLS.CONFUSE.level) return SPELLS.CONFUSE;

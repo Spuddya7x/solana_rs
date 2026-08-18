@@ -36,7 +36,7 @@ pub const HIGH_ALCH_TICKS: u32 = 5;
 /// Seconds per game tick on a normal-rate world.
 pub const TICK_SECONDS: f64 = 0.6;
 /// XP needed for level 55 Magic, the High Level Alchemy requirement.
-pub const XP_FOR_LEVEL_55: f64 = 166_160.0;
+pub const XP_FOR_LEVEL_55: f64 = 166_636.0;
 
 /// Seconds between high alchemy casts.
 pub fn seconds_per_high_alch() -> f64 {

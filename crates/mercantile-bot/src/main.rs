@@ -47,6 +47,8 @@ enum Command {
     Balances(BalancesArgs),
     /// Rank markets by high-alchemy arbitrage profit.
     AlchScan(AlchScanArgs),
+    /// Plan a Magic training route to the level alchemy needs.
+    MagicPlan(MagicPlanArgs),
     /// Run the bot.
     Run(RunArgs),
     /// Download the item registry.
@@ -118,6 +120,38 @@ struct AlchScanArgs {
 }
 
 #[derive(Args)]
+struct MagicPlanArgs {
+    /// Level to start from.
+    #[arg(long, default_value_t = 1)]
+    from: u32,
+    /// Level to reach. 55 unlocks high alchemy; 66 unlocks the Wizards' Guild
+    /// and with it an unbounded nature rune supply.
+    #[arg(long, default_value_t = 55)]
+    to: u32,
+    /// cheapest, fastest, or both.
+    #[arg(long, default_value = "both")]
+    route: String,
+    /// Allow spells needing runes no open shop sells (nature, law, blood, soul).
+    #[arg(long)]
+    any_runes: bool,
+    /// Assume no undead target is available, ruling out crumble undead.
+    #[arg(long)]
+    no_undead: bool,
+    /// Allow alchemy legs. Needs nature runes and a stream of items, both
+    /// supply-limited until the Wizards' Guild opens at 66.
+    #[arg(long)]
+    with_alchemy: bool,
+    /// GP per nature rune. Defaults to the live pool price when alchemy is on.
+    #[arg(long)]
+    nature_rune_gp: Option<f64>,
+    /// Assume a staff of fire, which makes fire runes free.
+    #[arg(long)]
+    fire_staff: bool,
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args)]
 struct RunArgs {
     /// Run a single tick and exit.
     #[arg(long)]
@@ -161,6 +195,7 @@ fn main() -> Result<()> {
         Command::Quote(args) => quote(&cli, args),
         Command::Balances(args) => balances(&cli, args),
         Command::AlchScan(args) => alch_scan(&cli, args),
+        Command::MagicPlan(args) => magic_plan(&cli, args),
         Command::Run(args) => run(&cli, args),
         Command::RegistrySync(args) => registry_sync(&cli, args),
         Command::Report(args) => report(&cli, args),
@@ -507,9 +542,135 @@ fn alch_scan(cli: &Cli, args: &AlchScanArgs) -> Result<()> {
             candidates.len(),
             mercantile_core::alch::seconds_per_high_alch()
         );
-        println!("'GP/hour' is casting-limited and assumes the stack is already bought. In practice");
-        println!("pool inventory binds first: each pool holds about a hundred items, and 'items' above");
+        println!(
+            "'GP/hour' is casting-limited and assumes the stack is already bought. In practice"
+        );
+        println!(
+            "pool inventory binds first: each pool holds about a hundred items, and 'items' above"
+        );
         println!("is where buying one more costs more than alching it returns.");
+    }
+    Ok(())
+}
+
+fn magic_plan(cli: &Cli, args: &MagicPlanArgs) -> Result<()> {
+    use mercantile_core::magic::{plan, Constraints, Objective, RunePrices};
+
+    let mut prices = RunePrices::default();
+    if args.fire_staff {
+        prices = prices.with_fire_staff();
+    }
+    // Nature runes are the one rune with no open shop, so their price is the
+    // live pool price rather than a shop cost.
+    if args.with_alchemy {
+        let nature_rune_gp = match args.nature_rune_gp {
+            Some(price) => Some(price),
+            None => {
+                let config = load_config(cli)?;
+                let registry = load_registry(&config)?;
+                let chain = client(&config);
+                registry
+                    .market(mercantile_bot::strategy::alch_arb::NATURE_RUNE_KEY)
+                    .ok()
+                    .and_then(|market| chain.fetch_pool(&market.pool).ok())
+                    .map(|pool| pool.spot_price())
+            }
+        };
+        if let Some(price) = nature_rune_gp {
+            prices.set("naturerune", price);
+        }
+    } else if let Some(price) = args.nature_rune_gp {
+        prices.set("naturerune", price);
+    }
+
+    let constraints = Constraints {
+        shop_runes_only: !args.any_runes,
+        allow_undead: !args.no_undead,
+        allow_alchemy: args.with_alchemy,
+    };
+
+    let objectives: Vec<(&str, Objective)> = match args.route.as_str() {
+        "cheapest" => vec![("cheapest", Objective::Cheapest)],
+        "fastest" => vec![("fastest", Objective::Fastest)],
+        _ => vec![
+            ("cheapest", Objective::Cheapest),
+            ("fastest", Objective::Fastest),
+        ],
+    };
+
+    let mut json_routes = Vec::new();
+    for (label, objective) in objectives {
+        let plan = plan(args.from, args.to, objective, &prices, &constraints);
+        if args.json {
+            json_routes.push(serde_json::json!({
+                "route": label,
+                "from": args.from,
+                "to": args.to,
+                "casts": plan.casts(),
+                "hours": plan.hours(),
+                "rune_gp": plan.rune_gp(),
+                "legs": plan.legs.iter().map(|leg| serde_json::json!({
+                    "spell": leg.spell.name,
+                    "component": leg.spell.component,
+                    "from_level": leg.from_level,
+                    "to_level": leg.to_level,
+                    "casts": leg.casts,
+                    "hours": leg.seconds / 3600.0,
+                    "rune_gp": leg.rune_gp,
+                    "xp_per_cast": leg.spell.xp,
+                    "splash": leg.spell.repeatability
+                        == mercantile_core::magic::Repeatability::RequiresSplash,
+                })).collect::<Vec<_>>(),
+            }));
+            continue;
+        }
+
+        println!("{label} route, magic {} to {}:", args.from, args.to);
+        println!(
+            "  {:<16} {:>7} {:>9} {:>7} {:>10} {:>8}",
+            "spell", "levels", "casts", "hours", "rune GP", "cast on"
+        );
+        for leg in &plan.legs {
+            let target = match leg.spell.target {
+                mercantile_core::magic::TargetRequirement::Undead => "undead",
+                mercantile_core::magic::TargetRequirement::InventoryItem => "an item",
+                mercantile_core::magic::TargetRequirement::Any => {
+                    if leg.spell.repeatability
+                        == mercantile_core::magic::Repeatability::RequiresSplash
+                    {
+                        "splash"
+                    } else {
+                        "any npc"
+                    }
+                }
+            };
+            println!(
+                "  {:<16} {:>3}-{:<3} {:>9} {:>7.1} {:>10.0} {:>8}",
+                leg.spell.name,
+                leg.from_level,
+                leg.to_level,
+                leg.casts,
+                leg.seconds / 3600.0,
+                leg.rune_gp,
+                target
+            );
+        }
+        println!(
+            "  total: {} casts, {:.1} hours, {:.0} GP of runes\n",
+            plan.casts(),
+            plan.hours(),
+            plan.rune_gp()
+        );
+    }
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&json_routes)?);
+    } else {
+        println!("Every combat spell casts in 5 ticks, so 'fastest' is simply the most XP per");
+        println!("cast; only low alchemy (3 ticks) breaks that. 'splash' legs are debuff spells");
+        println!("that a landed cast would block — wear a bronze kit (-69 magic attack) so every");
+        println!("cast misses. Rune prices are the game's shop values; pass --fire-staff if one");
+        println!("is equipped.");
     }
     Ok(())
 }
