@@ -94,6 +94,7 @@ pub struct TestMarket {
     pub position: Position,
     pub gp_available: f64,
     pub now: i64,
+    pub supply: Option<f64>,
 }
 
 impl TestMarket {
@@ -108,7 +109,14 @@ impl TestMarket {
             position: Position::default(),
             gp_available: 100_000.0,
             now: 1_787_000_000,
+            supply: None,
         }
+    }
+
+    /// Set the item's on-chain token supply, as the engine would.
+    pub fn with_supply(mut self, supply: f64) -> Self {
+        self.supply = Some(supply);
+        self
     }
 
     /// A lobster-sized pool sitting exactly on its floor.
@@ -152,6 +160,7 @@ impl TestMarket {
             now: self.now,
             current_point: self.now as u64,
             gp_available: self.gp_available,
+            supply: self.supply,
         }
     }
 }

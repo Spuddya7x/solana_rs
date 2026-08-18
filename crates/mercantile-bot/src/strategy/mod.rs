@@ -7,6 +7,7 @@
 //! strategy code run in paper and live mode unchanged, and be unit-tested with no
 //! network at all.
 
+pub mod accumulate;
 pub mod alch_arb;
 pub mod alch_floor;
 pub mod grid;
@@ -17,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use crate::market::MarketView;
 use mercantile_dex::quote::Side;
 
+pub use accumulate::{AccumulateParams, AccumulateStrategy};
 pub use alch_arb::{AlchArbParams, AlchArbStrategy};
 pub use alch_floor::{AlchFloorParams, AlchFloorStrategy};
 pub use grid::{GridParams, GridStrategy};
@@ -116,6 +118,8 @@ fn default_true() -> bool {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum StrategyKind {
+    /// Convert GP into items whose supply cannot grow.
+    Accumulate(AccumulateParams),
     /// Buy only stacks that high alchemy would pay for.
     AlchArb(AlchArbParams),
     /// Buy at the permanent alch floor, sell into strength.
@@ -130,6 +134,7 @@ impl StrategyEntry {
     /// Build the strategy this entry describes.
     pub fn build(&self) -> Box<dyn Strategy> {
         match &self.kind {
+            StrategyKind::Accumulate(params) => Box::new(AccumulateStrategy::new(params.clone())),
             StrategyKind::AlchArb(params) => Box::new(AlchArbStrategy::new(params.clone())),
             StrategyKind::AlchFloor(params) => Box::new(AlchFloorStrategy::new(params.clone())),
             StrategyKind::MeanReversion(params) => {
@@ -142,6 +147,7 @@ impl StrategyEntry {
     /// Reject parameter sets that could never trade, or could only lose.
     pub fn validate(&self) -> anyhow::Result<()> {
         match &self.kind {
+            StrategyKind::Accumulate(params) => params.validate(),
             StrategyKind::AlchArb(params) => params.validate(),
             StrategyKind::AlchFloor(params) => params.validate(),
             StrategyKind::MeanReversion(params) => params.validate(),
@@ -152,6 +158,7 @@ impl StrategyEntry {
     /// The name the built strategy will report.
     pub fn name(&self) -> &'static str {
         match self.kind {
+            StrategyKind::Accumulate(_) => accumulate::NAME,
             StrategyKind::AlchArb(_) => alch_arb::NAME,
             StrategyKind::AlchFloor(_) => alch_floor::NAME,
             StrategyKind::MeanReversion(_) => mean_reversion::NAME,

@@ -49,6 +49,8 @@ enum Command {
     AlchScan(AlchScanArgs),
     /// Plan a Magic training route to the level alchemy needs.
     MagicPlan(MagicPlanArgs),
+    /// Rank markets by how little of the item can ever exist.
+    Scarcity(ScarcityArgs),
     /// Run the bot.
     Run(RunArgs),
     /// Download the item registry.
@@ -115,6 +117,25 @@ struct AlchScanArgs {
     /// Only scan this many of the richest markets (each one costs an RPC read).
     #[arg(long, default_value_t = 200)]
     scan: usize,
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args)]
+struct ScarcityArgs {
+    /// Whole items to price per market.
+    #[arg(long, default_value_t = 1)]
+    items: u64,
+    /// How many to show.
+    #[arg(long, default_value_t = 20)]
+    limit: usize,
+    /// Include items the game can still produce.
+    #[arg(long)]
+    all: bool,
+    /// Ignore markets floored below this many GP — most unprintable items are
+    /// macro-event cubes and quest litter at 0.9 GP.
+    #[arg(long, default_value_t = 100.0)]
+    min_floor: f64,
     #[arg(long)]
     json: bool,
 }
@@ -196,6 +217,7 @@ fn main() -> Result<()> {
         Command::Balances(args) => balances(&cli, args),
         Command::AlchScan(args) => alch_scan(&cli, args),
         Command::MagicPlan(args) => magic_plan(&cli, args),
+        Command::Scarcity(args) => scarcity(&cli, args),
         Command::Run(args) => run(&cli, args),
         Command::RegistrySync(args) => registry_sync(&cli, args),
         Command::Report(args) => report(&cli, args),
@@ -553,6 +575,78 @@ fn alch_scan(cli: &Cli, args: &AlchScanArgs) -> Result<()> {
     Ok(())
 }
 
+fn scarcity(cli: &Cli, args: &ScarcityArgs) -> Result<()> {
+    use mercantile_bot::scarcity::{assess, rank};
+
+    let config = load_config(cli)?;
+    let registry = load_registry(&config)?;
+    let chain = client(&config);
+    let point = chain.current_point()?;
+
+    // Only the items with no in-game source are worth the RPC reads, unless the
+    // caller wants the whole registry.
+    let markets: Vec<Market> = registry
+        .markets()?
+        .into_iter()
+        .filter(|m| args.all || mercantile_core::sources_for(&m.key).capped)
+        .collect();
+    anyhow::ensure!(!markets.is_empty(), "no markets matched");
+
+    let pools: Vec<Pubkey> = markets.iter().map(|m| m.pool).collect();
+    let mints: Vec<Pubkey> = markets.iter().map(|m| m.mint).collect();
+    let states = chain.fetch_pools(&pools)?;
+    let supplies = chain.token_supplies(&mints)?;
+
+    let rows: Vec<_> = markets
+        .iter()
+        .zip(states)
+        .zip(supplies)
+        .filter_map(|((market, state), supply)| {
+            Some(assess(market, &state?, supply?, args.items, point))
+        })
+        .collect();
+    let ranked = rank(rows);
+    let shown: Vec<_> = ranked
+        .iter()
+        .filter(|row| row.floor >= args.min_floor)
+        .take(args.limit)
+        .collect();
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&shown)?);
+        return Ok(());
+    }
+
+    println!(
+        "{:<24} {:>7} {:>9} {:>6} {:>12} {:>12}  source",
+        "market", "supply", "bridged", "score", "price", "buy GP"
+    );
+    for row in &shown {
+        println!(
+            "{:<24} {:>7.0} {:>9.0} {:>6.2} {:>12.0} {:>12}  {}",
+            row.market,
+            row.supply,
+            row.bridged_in,
+            row.score,
+            row.price,
+            row.gp_cost
+                .map(|gp| format!("{gp:.0}"))
+                .unwrap_or_else(|| "-".into()),
+            row.sources.describe(),
+        );
+    }
+    println!(
+        "\n{} of {} markets scanned. Every pool was seeded with {} units, so 'bridged' is",
+        shown.len(),
+        markets.len(),
+        mercantile_core::POOL_SEED_UNITS
+    );
+    println!("supply players have produced in game — direct evidence an item is farmable.");
+    println!("Score weights 'nothing in the game makes this' above price; run with --all to");
+    println!("include the 1,312 items that something does.");
+    Ok(())
+}
+
 fn magic_plan(cli: &Cli, args: &MagicPlanArgs) -> Result<()> {
     use mercantile_core::magic::{plan, Constraints, Objective, RunePrices};
 
@@ -701,6 +795,11 @@ fn run(cli: &Cli, args: &RunArgs) -> Result<()> {
     let risk = RiskManager::new(config.risk.clone());
     let journal = Journal::open(&config.journal.path)?;
 
+    // The accumulate strategy trades on supply, so read it up front. It only
+    // moves when someone bridges an item out of the game, so once is plenty for
+    // a short run and `with_supply_refresh` covers long ones.
+    let supplies = read_supplies(&client(&config), &markets);
+
     // Three independent gates protect live trading. Any one of them missing
     // keeps the run on paper.
     let live = args.live && config.live_enabled();
@@ -740,7 +839,9 @@ fn run(cli: &Cli, args: &RunArgs) -> Result<()> {
             journal,
         )
         .with_snapshots(config.journal.record_snapshots)
-        .with_balance_sync(true);
+        .with_balance_sync(true)
+        .with_supplies(supplies)
+        .with_supply_refresh(60);
         drive(&mut engine, &config, args.once)
     } else {
         if config.bot.mode == Mode::Live {
@@ -772,8 +873,30 @@ fn run(cli: &Cli, args: &RunArgs) -> Result<()> {
             config.bot.history_capacity,
             journal,
         )
-        .with_snapshots(config.journal.record_snapshots);
+        .with_snapshots(config.journal.record_snapshots)
+        .with_supplies(supplies)
+        .with_supply_refresh(60);
         drive(&mut engine, &config, args.once)
+    }
+}
+
+/// Token supply per market, in whole items. Failures are logged, not fatal:
+/// without supply the scarcity strategies abstain, which is the safe default.
+fn read_supplies(
+    chain: &ChainClient,
+    markets: &[Market],
+) -> std::collections::BTreeMap<String, f64> {
+    let mints: Vec<Pubkey> = markets.iter().map(|m| m.mint).collect();
+    match chain.token_supplies(&mints) {
+        Ok(supplies) => markets
+            .iter()
+            .zip(supplies)
+            .filter_map(|(market, supply)| Some((market.key.clone(), supply?)))
+            .collect(),
+        Err(err) => {
+            tracing::warn!(%err, "could not read token supplies; scarcity strategies will abstain");
+            Default::default()
+        }
     }
 }
 
@@ -890,6 +1013,10 @@ fn report(cli: &Cli, args: &ReportArgs) -> Result<()> {
 fn strategies() {
     println!("built-in strategies (configure with [[strategies]] kind = \"...\"):\n");
     for (name, blurb) in [
+        (
+            "accumulate",
+            "The exit. Converts GP into the 62 items with no in-game source — no drop\n    table, no shop, no skill, no quest, no ground spawn — so their supply cannot\n    grow. Weighs the pool floor too, since most unprintable items are quest\n    litter. Never sells.",
+        ),
         (
             "alch-arb",
             "Buys only stacks that High Level Alchemy would pay for: 0.6 x cost per\n    item against the live pool price, less a nature rune. Exits through the\n    Exchange Clerk and the spell, not through the pool.",

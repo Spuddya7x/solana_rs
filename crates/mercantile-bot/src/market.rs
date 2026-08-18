@@ -108,6 +108,12 @@ pub struct MarketView<'a> {
     pub current_point: u64,
     /// GP the bot may still spend.
     pub gp_available: f64,
+    /// Total on-chain supply of the item token, in whole items, when known.
+    ///
+    /// Scarcity is a claim about supply, so strategies that trade on it need
+    /// this; it is a separate RPC read, so the engine refreshes it periodically
+    /// rather than every tick.
+    pub supply: Option<f64>,
 }
 
 impl<'a> MarketView<'a> {

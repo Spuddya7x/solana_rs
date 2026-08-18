@@ -67,6 +67,12 @@ pub struct Engine<F, E, B> {
     journal: Journal,
     record_snapshots: bool,
     sync_balances: bool,
+    /// Live token supply per market, refreshed every `supply_refresh_ticks`.
+    supply: BTreeMap<String, f64>,
+    /// How often to re-read supplies. Supply moves only when someone bridges an
+    /// item out of the game, which is rare, so this is deliberately infrequent.
+    supply_refresh_ticks: u64,
+    ticks: u64,
     /// Consecutive fetch failures; the engine gives up rather than spinning.
     consecutive_failures: u32,
 }
@@ -99,6 +105,9 @@ impl<F: PoolFetch, E: Executor, B: BalanceSource> Engine<F, E, B> {
             journal,
             record_snapshots: false,
             sync_balances: false,
+            supply: BTreeMap::new(),
+            supply_refresh_ticks: 0,
+            ticks: 0,
             consecutive_failures: 0,
         }
     }
@@ -113,6 +122,28 @@ impl<F: PoolFetch, E: Executor, B: BalanceSource> Engine<F, E, B> {
     pub fn with_balance_sync(mut self, sync: bool) -> Self {
         self.sync_balances = sync;
         self
+    }
+
+    /// Seed the token supplies the scarcity strategies read.
+    pub fn with_supplies(mut self, supplies: BTreeMap<String, f64>) -> Self {
+        self.supply = supplies;
+        self
+    }
+
+    /// Re-read token supplies every `ticks` ticks. Zero disables refreshing.
+    pub fn with_supply_refresh(mut self, ticks: u64) -> Self {
+        self.supply_refresh_ticks = ticks;
+        self
+    }
+
+    /// Replace the known supplies, as a refresher would.
+    pub fn set_supplies(&mut self, supplies: BTreeMap<String, f64>) {
+        self.supply = supplies;
+    }
+
+    /// Whether this tick should refresh supplies.
+    pub fn supply_due(&self) -> bool {
+        self.supply_refresh_ticks > 0 && self.ticks % self.supply_refresh_ticks == 0
     }
 
     pub fn portfolio(&self) -> &Portfolio {
@@ -196,6 +227,7 @@ impl<F: PoolFetch, E: Executor, B: BalanceSource> Engine<F, E, B> {
     /// Run exactly one tick.
     pub fn tick(&mut self) -> Result<TickSummary> {
         let ts = now();
+        self.ticks = self.ticks.wrapping_add(1);
         let pools: Vec<_> = self.markets.iter().map(|m| m.pool).collect();
         let states = self.fetcher.fetch_pools(&pools)?;
         let current_point = self.fetcher.current_point()?;
@@ -243,6 +275,7 @@ impl<F: PoolFetch, E: Executor, B: BalanceSource> Engine<F, E, B> {
                     &self.portfolio,
                     ts,
                     current_point,
+                    self.supply.get(&market.key).copied(),
                 );
                 self.journal.record(&Event::Snapshot {
                     ts,
@@ -264,6 +297,7 @@ impl<F: PoolFetch, E: Executor, B: BalanceSource> Engine<F, E, B> {
                         &self.portfolio,
                         ts,
                         current_point,
+                        self.supply.get(&market.key).copied(),
                     );
                     self.strategies[index].on_market(&view)
                 };
@@ -278,6 +312,7 @@ impl<F: PoolFetch, E: Executor, B: BalanceSource> Engine<F, E, B> {
                         &self.portfolio,
                         ts,
                         current_point,
+                        self.supply.get(&market.key).copied(),
                     );
                     match self
                         .risk
@@ -347,6 +382,7 @@ fn build_view<'a>(
     portfolio: &Portfolio,
     now: i64,
     current_point: u64,
+    supply: Option<f64>,
 ) -> MarketView<'a> {
     MarketView {
         market,
@@ -356,6 +392,7 @@ fn build_view<'a>(
         now,
         current_point,
         gp_available: portfolio.gp,
+        supply,
     }
 }
 

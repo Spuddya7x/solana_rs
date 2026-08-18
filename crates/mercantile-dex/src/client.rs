@@ -100,6 +100,42 @@ impl ChainClient {
         }
     }
 
+    /// Total supply of each mint, in whole tokens.
+    ///
+    /// Reads the SPL mint accounts directly rather than calling `getTokenSupply`
+    /// per mint: supply is a `u64` at offset 36 of the 82-byte mint layout and
+    /// decimals a `u8` at offset 44, so a whole universe costs one batched call
+    /// instead of one call per market.
+    pub fn token_supplies(&self, mints: &[Pubkey]) -> Result<Vec<Option<f64>>> {
+        const SUPPLY_OFFSET: usize = 36;
+        const DECIMALS_OFFSET: usize = 44;
+        const MINT_LEN: usize = 82;
+
+        let mut out = Vec::with_capacity(mints.len());
+        for chunk in mints.chunks(100) {
+            let accounts = self
+                .rpc
+                .get_multiple_accounts(chunk)
+                .map_err(|e| DexError::Rpc(Box::new(e)))?;
+            for account in accounts {
+                let supply = account.and_then(|account| {
+                    if account.data.len() < MINT_LEN {
+                        return None;
+                    }
+                    let raw = u64::from_le_bytes(
+                        account.data[SUPPLY_OFFSET..SUPPLY_OFFSET + 8]
+                            .try_into()
+                            .ok()?,
+                    );
+                    let decimals = account.data[DECIMALS_OFFSET];
+                    Some(raw as f64 / 10f64.powi(decimals as i32))
+                });
+                out.push(supply);
+            }
+        }
+        Ok(out)
+    }
+
     /// GP balance in base units.
     pub fn gp_balance(&self, owner: &Pubkey) -> Result<u64> {
         self.token_balance(owner, &GP_MINT)

@@ -41,14 +41,41 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 
 | Script | What it does |
 |---|---|
+| `campaign.ts` | **The whole account.** Works out what stage it is at and does the next thing. |
 | `train-magic.ts` | Trains Magic to a target level, picking the best method available. |
 | `alch-loop.ts` | Alchs a stack of items and optionally withdraws the GP to the wallet. |
 | `lib/spells.ts` | Spell component ids, levels, runes, XP — derived from the game's config. |
 | `lib/alch.ts` | Spell-on-item casting with XP-based completion detection. |
 | `lib/bridge.ts` | Exchange Clerk dialogue: claim, withdraw GP, withdraw items. |
 | `lib/economics.ts` | Alch values and break-evens, mirroring the Rust `alch` module. |
+| `lib/supply.ts` | Buying runes from shops with no entry requirements. |
 | `lib/nav/` | Navigation: gazetteer, router, executor. See below. |
 | `tools/build-places.ts` | Regenerates the gazetteer from the game's map data. |
+
+## The campaign
+
+`campaign.ts` runs an account end to end:
+
+```
+equip     wear a splash kit so stat-reduction spells stay castable
+stock     buy runes at Aubury or Betty — no entry requirements, 1,000+ deep
+train     splash up the ladder to the level alchemy needs
+produce   high alch bridged-in items into GP
+cash out  send the GP to the wallet, where mercbot buys scarcity with it
+```
+
+The stage is **derived from observation, never remembered**. No saved state means
+nothing to go stale: kill it mid-run, restart it, point it at an account someone
+played by hand, or run it across a fleet at different stages — same command line,
+correct behaviour.
+
+```sh
+bun bots/<name>/campaign.ts --target 55 --alch "rune platebody" --cycles 20
+```
+
+Nature runes are the one input it cannot buy: nothing sells them below 66 Magic,
+so `produce` claims them from the chain side via the Exchange Clerk. Everything
+else it sources itself.
 
 ## The training route, and why it is nearly free
 

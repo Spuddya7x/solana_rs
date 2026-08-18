@@ -82,6 +82,19 @@ max_position_items = 100
 nature_rune_gp = 0.0       # 0 = read it from the live nature rune market
 fire_rune_gp = 0.0         # 0 = a staff of fire is equipped
 
+# The exit. Converts GP into items whose supply cannot grow — the 62 registry
+# items with no drop table, shop, skill, quest or ground spawn. Never sells.
+# `mercbot scarcity` shows what qualifies and what it costs.
+[[strategies]]
+kind = "accumulate"
+enabled = false
+min_score = 0.5            # 1.0 = capped and undiluted
+min_floor_gp = 10000.0     # most unprintable items are 0.9 GP quest litter
+reserve_gp = 100000.0      # working capital the alch loop keeps
+size_items = 1
+max_items = 10
+max_premium = 1.5
+
 # Buy near the permanent floor, sell into strength.
 [[strategies]]
 kind = "alch-floor"
