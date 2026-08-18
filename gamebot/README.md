@@ -86,6 +86,18 @@ is someone else's loot.
 bun bots/<name>/moneymaker.ts --target 20000
 ```
 
+## Selling to shops
+
+`lib/money/pricing.ts` mirrors the Rust `shops` module, and both port
+`shop.rs2` exactly. The two facts that matter:
+
+* Shops pay `cost x multiplier / 1000`, multipliers being 600–950, against a
+  pool floor of 36% of cost — so an item bought on chain and sold at a counter
+  returns the alchemy margin with no Magic level at all. `mercbot shop-flip`
+  ranks that; `moneymaker.ts` walks it.
+* The price falls as you sell and rises when the shop is depleted, because
+  `diff = current + sold - base`. Planning assumes base stock, which is neutral.
+
 ## Safespots
 
 A safespot is a tile where the monster can be **seen** but cannot **reach** you,

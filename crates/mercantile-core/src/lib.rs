@@ -12,6 +12,7 @@ pub mod amounts;
 pub mod ids;
 pub mod magic;
 pub mod registry;
+pub mod shops;
 pub mod sources;
 
 pub use alch::{high_alch_value, low_alch_value, HIGH_ALCH_LEVEL, HIGH_ALCH_MULT, LOW_ALCH_MULT};
@@ -24,4 +25,5 @@ pub use ids::{
     GP_DECIMALS, GP_MINT, ITEM_DECIMALS, MERCANTILE_BRIDGE_PROGRAM_ID,
 };
 pub use registry::{Item, Market, Registry, RegistryError};
+pub use shops::{best_shop_for, shops, shops_for, Shop};
 pub use sources::{capped_items, sources_for, ItemSources, POOL_SEED_UNITS};

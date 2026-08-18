@@ -51,6 +51,8 @@ enum Command {
     MagicPlan(MagicPlanArgs),
     /// Rank markets by how little of the item can ever exist.
     Scarcity(ScarcityArgs),
+    /// Rank markets by profit from buying on chain and selling to an NPC shop.
+    ShopFlip(ShopFlipArgs),
     /// Run the bot.
     Run(RunArgs),
     /// Download the item registry.
@@ -115,6 +117,21 @@ struct AlchScanArgs {
     #[arg(long, default_value_t = 20)]
     limit: usize,
     /// Only scan this many of the richest markets (each one costs an RPC read).
+    #[arg(long, default_value_t = 200)]
+    scan: usize,
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args)]
+struct ShopFlipArgs {
+    /// Largest stack to consider per market.
+    #[arg(long, default_value_t = 25)]
+    max_items: u64,
+    /// How many to show.
+    #[arg(long, default_value_t = 20)]
+    limit: usize,
+    /// Only scan this many of the richest markets (each costs an RPC read).
     #[arg(long, default_value_t = 200)]
     scan: usize,
     #[arg(long)]
@@ -218,6 +235,7 @@ fn main() -> Result<()> {
         Command::AlchScan(args) => alch_scan(&cli, args),
         Command::MagicPlan(args) => magic_plan(&cli, args),
         Command::Scarcity(args) => scarcity(&cli, args),
+        Command::ShopFlip(args) => shop_flip(&cli, args),
         Command::Run(args) => run(&cli, args),
         Command::RegistrySync(args) => registry_sync(&cli, args),
         Command::Report(args) => report(&cli, args),
@@ -571,6 +589,69 @@ fn alch_scan(cli: &Cli, args: &AlchScanArgs) -> Result<()> {
             "pool inventory binds first: each pool holds about a hundred items, and 'items' above"
         );
         println!("is where buying one more costs more than alching it returns.");
+    }
+    Ok(())
+}
+
+fn shop_flip(cli: &Cli, args: &ShopFlipArgs) -> Result<()> {
+    use mercantile_bot::shopflip::{best_size, rank};
+
+    let config = load_config(cli)?;
+    let registry = load_registry(&config)?;
+    let chain = client(&config);
+    let point = chain.current_point()?;
+
+    // Shops pay a percentage of cost, so the richest items carry the most
+    // absolute margin: scan from the top of the registry down.
+    let mut candidates = registry.markets()?;
+    candidates.sort_by(|a, b| b.item.cost.cmp(&a.item.cost));
+    candidates.truncate(args.scan);
+
+    let pools: Vec<Pubkey> = candidates.iter().map(|m| m.pool).collect();
+    let states = chain.fetch_pools(&pools)?;
+
+    let flips: Vec<_> = candidates
+        .iter()
+        .zip(states)
+        .filter_map(|(market, state)| best_size(market, &state?, args.max_items, point))
+        .collect();
+    let ranked = rank(flips);
+    let shown: Vec<_> = ranked.iter().take(args.limit).collect();
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&shown)?);
+        return Ok(());
+    }
+
+    println!(
+        "{:<24} {:>5} {:>11} {:>11} {:>10} {:>7}  sell to",
+        "market", "items", "buy GP", "shop GP", "profit", "margin"
+    );
+    for row in &shown {
+        println!(
+            "{:<24} {:>5} {:>11.0} {:>11.0} {:>10.0} {:>6.0}%  {}",
+            row.market,
+            row.items,
+            row.gp_cost,
+            row.shop_revenue,
+            row.profit_gp,
+            row.margin * 100.0,
+            row.shop_title,
+        );
+    }
+    if shown.is_empty() {
+        println!("(nothing profitable right now)");
+    } else {
+        println!(
+            "\n{} of the {} richest markets are flippable. A pool floor is 36% of an item's",
+            ranked.len(),
+            candidates.len()
+        );
+        println!("cost; shops pay 60-95%, so this is the alchemy margin without the Magic level.");
+        println!(
+            "Shop revenue assumes the counter is at its base stock — a depleted one pays more."
+        );
+        println!("'items' is where the pool's rising price meets the shop's falling bid.");
     }
     Ok(())
 }
@@ -1016,6 +1097,10 @@ fn strategies() {
         (
             "accumulate",
             "The exit. Converts GP into the 62 items with no in-game source — no drop\n    table, no shop, no skill, no quest, no ground spawn — so their supply cannot\n    grow. Weighs the pool floor too, since most unprintable items are quest\n    litter. Never sells.",
+        ),
+        (
+            "shop-arb",
+            "Buys stacks an NPC shop will pay more for than the pool charges. The\n    same margin alchemy earns, without the level 55 gate — the exit is a\n    counter, not a spell.",
         ),
         (
             "alch-arb",

@@ -3,7 +3,7 @@ export const DEFAULT_RESPAWN_TICKS = 100;
 
 export interface SpawnItem { item: string; cost: number; x: number; z: number; respawnTicks: number }
 export interface SpawnCluster { level: number; x: number; z: number; value: number; items: SpawnItem[] }
-export interface Shop { npc: string; title: string; buyMultiplier: number; haggle: number; level: number; x: number; z: number; stock: Record<string, number>; buysAnything: boolean }
+export interface Shop { npc: string; title: string; buyMultiplier: number; haggle: number; level: number; x: number; z: number; stock: Record<string, number>; buysAnything: boolean; safe: boolean }
 
 export const SPAWN_CLUSTERS: SpawnCluster[] = [
  {
@@ -146,6 +146,28 @@ export const SPAWN_CLUSTERS: SpawnCluster[] = [
  },
  {
   "level": 0,
+  "x": 2676,
+  "z": 3734,
+  "items": [
+   {
+    "item": "iron_pickaxe",
+    "cost": 140,
+    "x": 2672,
+    "z": 3728,
+    "respawnTicks": 100
+   },
+   {
+    "item": "sapphire",
+    "cost": 250,
+    "x": 2679,
+    "z": 3740,
+    "respawnTicks": 1000
+   }
+  ],
+  "value": 390
+ },
+ {
+  "level": 0,
   "x": 2715,
   "z": 9820,
   "items": [
@@ -262,7 +284,8 @@ export const SHOPS: Shop[] = [
    "fur": 3,
    "grey_wolf_fur": 3
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "fur_merchant",
@@ -276,7 +299,8 @@ export const SHOPS: Shop[] = [
    "fur": 3,
    "grey_wolf_fur": 3
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "davon",
@@ -293,7 +317,8 @@ export const SHOPS: Shop[] = [
    "amulet_of_strength": 0,
    "amulet_of_power": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "bedabin",
@@ -311,7 +336,8 @@ export const SHOPS: Shop[] = [
    "bucket_water": 5,
    "knife": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "baker_merchant",
@@ -326,7 +352,8 @@ export const SHOPS: Shop[] = [
    "cake": 3,
    "chocolate_slice": 8
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gem_merchant",
@@ -342,7 +369,8 @@ export const SHOPS: Shop[] = [
    "ruby": 1,
    "diamond": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "tbwt_tamayu_final",
@@ -361,7 +389,8 @@ export const SHOPS: Shop[] = [
    "tbwt_rune_spear_kp": 0,
    "tbwt_cleaning_cloth": 10
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "alfonse_the_waiter",
@@ -378,7 +407,8 @@ export const SHOPS: Shop[] = [
    "lobster": 3,
    "swordfish": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "herquin",
@@ -398,7 +428,8 @@ export const SHOPS: Shop[] = [
    "ruby": 0,
    "diamond": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "shilofishowner",
@@ -417,7 +448,8 @@ export const SHOPS: Shop[] = [
    "raw_pike": 0,
    "raw_salmon": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gerrant",
@@ -446,7 +478,8 @@ export const SHOPS: Shop[] = [
    "raw_lobster": 0,
    "raw_swordfish": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "grum",
@@ -473,7 +506,8 @@ export const SHOPS: Shop[] = [
    "strung_ruby_amulet": 0,
    "strung_diamond_amulet": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "wydin",
@@ -496,7 +530,8 @@ export const SHOPS: Shop[] = [
    "tomato": 3,
    "potato": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "werewolfshopkeeper1",
@@ -516,7 +551,8 @@ export const SHOPS: Shop[] = [
    "raw_salmon": 5,
    "raw_shark": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "jatix",
@@ -531,7 +567,8 @@ export const SHOPS: Shop[] = [
    "pestle_and_mortar": 3,
    "eye_of_newt": 800
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "fishguildshop",
@@ -557,7 +594,8 @@ export const SHOPS: Shop[] = [
    "lobster": 0,
    "swordfish": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "shantay",
@@ -585,7 +623,8 @@ export const SHOPS: Shop[] = [
    "jug_empty": 0,
    "shantay_pass": 500
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gem_trader",
@@ -605,7 +644,8 @@ export const SHOPS: Shop[] = [
    "ruby": 0,
    "diamond": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "viking_clothing_shopkeeper",
@@ -638,7 +678,8 @@ export const SHOPS: Shop[] = [
    "viking_cloak_pink": 5,
    "viking_cloak_black": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "viking_fish_monger",
@@ -672,7 +713,8 @@ export const SHOPS: Shop[] = [
    "raw_swordfish": 0,
    "raw_shark": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "viking_longhall_barkeep",
@@ -687,7 +729,8 @@ export const SHOPS: Shop[] = [
    "viking_tankard_full": 50,
    "keg_of_beer": 20
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "viking_weapons_salesman",
@@ -710,7 +753,8 @@ export const SHOPS: Shop[] = [
    "viking_helmet_slash": 5,
    "viking_helmet_magic": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "silver_merchant",
@@ -725,7 +769,8 @@ export const SHOPS: Shop[] = [
    "silver_ore": 1,
    "silver_bar": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "zambo",
@@ -740,7 +785,8 @@ export const SHOPS: Shop[] = [
    "karamja_rum": 3,
    "jug_wine": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "drogo",
@@ -761,7 +807,8 @@ export const SHOPS: Shop[] = [
    "iron_bar": 0,
    "gold_bar": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "frincos",
@@ -776,7 +823,8 @@ export const SHOPS: Shop[] = [
    "pestle_and_mortar": 3,
    "eye_of_newt": 50
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "harry",
@@ -805,7 +853,8 @@ export const SHOPS: Shop[] = [
    "raw_swordfish": 0,
    "raw_shark": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "rommik",
@@ -825,7 +874,8 @@ export const SHOPS: Shop[] = [
    "holy_symbol_mould": 3,
    "sickle_mould": 6
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "wayne",
@@ -843,7 +893,8 @@ export const SHOPS: Shop[] = [
    "mithril_chainbody": 1,
    "adamant_chainbody": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "ranael",
@@ -861,7 +912,8 @@ export const SHOPS: Shop[] = [
    "mithril_plateskirt": 1,
    "adamant_plateskirt": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "louie_legs",
@@ -879,7 +931,8 @@ export const SHOPS: Shop[] = [
    "mithril_platelegs": 1,
    "adamant_platelegs": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "dommik",
@@ -899,7 +952,8 @@ export const SHOPS: Shop[] = [
    "holy_symbol_mould": 3,
    "sickle_mould": 6
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "flynn",
@@ -916,7 +970,8 @@ export const SHOPS: Shop[] = [
    "mithril_mace": 3,
    "adamant_mace": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "cassie",
@@ -936,7 +991,8 @@ export const SHOPS: Shop[] = [
    "steel_kiteshield": 0,
    "mithril_sq_shield": 0
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "magic_store_owner",
@@ -965,7 +1021,8 @@ export const SHOPS: Shop[] = [
    "lawrune": 1000,
    "deathrune": 1000
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "betty",
@@ -988,7 +1045,8 @@ export const SHOPS: Shop[] = [
    "bluewizhat": 1,
    "blackwizhat": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gaius",
@@ -1006,7 +1064,8 @@ export const SHOPS: Shop[] = [
    "mithril_2h_sword": 1,
    "adamant_2h_sword": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "noterazzo",
@@ -1025,7 +1084,8 @@ export const SHOPS: Shop[] = [
    "bronze_pickaxe": 5,
    "bronze_axe": 10
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": false
  },
  {
   "npc": "fat_tony",
@@ -1038,7 +1098,8 @@ export const SHOPS: Shop[] = [
   "stock": {
    "pizza_base": 30
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": false
  },
  {
   "npc": "scavvo",
@@ -1059,7 +1120,8 @@ export const SHOPS: Shop[] = [
    "dragon_vambraces": 1,
    "coif": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "jakut",
@@ -1073,7 +1135,8 @@ export const SHOPS: Shop[] = [
    "dragon_longsword": 2,
    "dragon_dagger": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "swordshop1",
@@ -1103,7 +1166,8 @@ export const SHOPS: Shop[] = [
    "mithril_dagger": 3,
    "adamant_dagger": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "swordshop2",
@@ -1133,7 +1197,8 @@ export const SHOPS: Shop[] = [
    "mithril_dagger": 3,
    "adamant_dagger": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "horvik_the_armourer",
@@ -1157,7 +1222,8 @@ export const SHOPS: Shop[] = [
    "studded_body": 1,
    "studded_chaps": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "peksa",
@@ -1179,7 +1245,8 @@ export const SHOPS: Shop[] = [
    "mithril_full_helm": 1,
    "adamant_full_helm": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "nurmof",
@@ -1197,7 +1264,8 @@ export const SHOPS: Shop[] = [
    "adamant_pickaxe": 2,
    "rune_pickaxe": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "zenesha",
@@ -1214,7 +1282,8 @@ export const SHOPS: Shop[] = [
    "black_platebody": 1,
    "mithril_platebody": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "spice_merchant",
@@ -1227,7 +1296,8 @@ export const SHOPS: Shop[] = [
   "stock": {
    "spicespot": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "tea_seller",
@@ -1240,7 +1310,8 @@ export const SHOPS: Shop[] = [
   "stock": {
    "cup_of_tea": 20
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "bob",
@@ -1259,7 +1330,8 @@ export const SHOPS: Shop[] = [
    "steel_battleaxe": 2,
    "mithril_battleaxe": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "magearena_runeshop",
@@ -1282,7 +1354,8 @@ export const SHOPS: Shop[] = [
    "cosmicrune": 20,
    "deathrune": 250
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "chadwell",
@@ -1307,7 +1380,8 @@ export const SHOPS: Shop[] = [
    "bread": 5,
    "cooked_meat": 10
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "frenita",
@@ -1329,7 +1403,8 @@ export const SHOPS: Shop[] = [
    "chocolate_bar": 2,
    "pot_flour": 8
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "brian",
@@ -1347,7 +1422,8 @@ export const SHOPS: Shop[] = [
    "mithril_battleaxe": 1,
    "adamant_battleaxe": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "duel_fadli",
@@ -1360,7 +1436,8 @@ export const SHOPS: Shop[] = [
   "stock": {
    "rotten_tomato": 2000
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "horror_lighthousekeeeper_well",
@@ -1396,7 +1473,8 @@ export const SHOPS: Shop[] = [
    "dwarven_stout": 5,
    "wizards_mind_bomb": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "fionella",
@@ -1412,7 +1490,8 @@ export const SHOPS: Shop[] = [
    "3dose1attack": 3,
    "steel_arrow": 500
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "helemos",
@@ -1426,7 +1505,8 @@ export const SHOPS: Shop[] = [
    "dragon_battleaxe": 2,
    "dragon_mace": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "thessalia",
@@ -1450,7 +1530,8 @@ export const SHOPS: Shop[] = [
    "priest_robe": 3,
    "priest_gown": 3
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "lowe",
@@ -1471,7 +1552,8 @@ export const SHOPS: Shop[] = [
    "oak_longbow": 2,
    "crossbow": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "aubury",
@@ -1491,7 +1573,8 @@ export const SHOPS: Shop[] = [
    "chaosrune": 1000,
    "deathrune": 1000
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gnome_hudo",
@@ -1524,7 +1607,8 @@ export const SHOPS: Shop[] = [
    "knife": 5,
    "giannes_cook_book": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gnome_rometti",
@@ -1556,7 +1640,8 @@ export const SHOPS: Shop[] = [
    "gnome_boots_cream": 5,
    "gnome_boots_turquoise": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gnome_heckelfunch",
@@ -1585,7 +1670,8 @@ export const SHOPS: Shop[] = [
    "knife": 5,
    "cocktail_guide": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "zeke",
@@ -1601,7 +1687,8 @@ export const SHOPS: Shop[] = [
    "steel_scimitar": 2,
    "mithril_scimitar": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "lathas_shopkeeper",
@@ -1633,7 +1720,8 @@ export const SHOPS: Shop[] = [
    "mithril_2h_sword": 1,
    "adamant_2h_sword": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "aprilfoolshorsesalesman",
@@ -1649,7 +1737,8 @@ export const SHOPS: Shop[] = [
    "horsey_black": 5,
    "horsey_grey": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "shilogeneralstore",
@@ -1684,7 +1773,8 @@ export const SHOPS: Shop[] = [
    "machette": 50,
    "rope": 10
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "siegfried_erkle",
@@ -1702,7 +1792,8 @@ export const SHOPS: Shop[] = [
    "dragonshield_b": 1,
    "cape_of_legends": 3
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "viking_sigmund",
@@ -1731,7 +1822,8 @@ export const SHOPS: Shop[] = [
    "potato": 10,
    "cabbage": 10
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "ranging_guild_tribal_salesman",
@@ -1755,7 +1847,8 @@ export const SHOPS: Shop[] = [
    "adamnt_thrownaxe": 500,
    "rune_thrownaxe": 400
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "ranging_guild_armour_salesman",
@@ -1775,7 +1868,8 @@ export const SHOPS: Shop[] = [
    "leather_cowl": 10,
    "leather_vambraces": 10
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "ranging_guild_bow_salesman",
@@ -1806,7 +1900,8 @@ export const SHOPS: Shop[] = [
    "oak_longbow": 20,
    "willow_longbow": 20
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "jiminua",
@@ -1843,7 +1938,8 @@ export const SHOPS: Shop[] = [
    "iron_axe": 5,
    "bronze_bar": 10
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "hickton",
@@ -1875,7 +1971,8 @@ export const SHOPS: Shop[] = [
    "studded_body": 2,
    "studded_chaps": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "tbwt_tiadeche_final",
@@ -1889,7 +1986,8 @@ export const SHOPS: Shop[] = [
    "tbwt_raw_karambwan": 10,
    "tbwt_karambwan_vessel": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "generalshopkeeper5",
@@ -1908,7 +2006,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalassistant5",
@@ -1927,7 +2026,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalassistant4",
@@ -1946,7 +2046,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalshopkeeper4",
@@ -1965,7 +2066,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "khazard_shopkeeper",
@@ -1989,7 +2091,8 @@ export const SHOPS: Shop[] = [
    "bucket_bailing": 30,
    "swamppaste": 500
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "death_shopkeeper",
@@ -2008,7 +2111,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "treevillage_shopkeeper1",
@@ -2030,7 +2134,8 @@ export const SHOPS: Shop[] = [
    "bronze_arrow": 30,
    "cooked_meat": 2
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalshopkeeper6",
@@ -2049,7 +2154,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalassistant6",
@@ -2068,7 +2174,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "werewolfshopkeeper2",
@@ -2110,7 +2217,8 @@ export const SHOPS: Shop[] = [
    "yellow_cape": 5,
    "green_cape": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "aemad",
@@ -2131,7 +2239,8 @@ export const SHOPS: Shop[] = [
    "rope": 20,
    "papyrus": 50
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "kortan",
@@ -2152,7 +2261,8 @@ export const SHOPS: Shop[] = [
    "rope": 20,
    "papyrus": 50
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "valaine",
@@ -2168,7 +2278,8 @@ export const SHOPS: Shop[] = [
    "black_platelegs": 1,
    "adamant_platebody": 1
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "oziach",
@@ -2182,7 +2293,8 @@ export const SHOPS: Shop[] = [
    "rune_platebody": 2,
    "dragonhide_body": 2
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "candle_maker",
@@ -2195,7 +2307,8 @@ export const SHOPS: Shop[] = [
   "stock": {
    "unlit_candle": 10
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "arhein",
@@ -2216,7 +2329,8 @@ export const SHOPS: Shop[] = [
    "rope": 2,
    "pot_empty": 2
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalassistant2",
@@ -2235,7 +2349,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalshopkeeper2",
@@ -2254,7 +2369,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "tailorp",
@@ -2283,7 +2399,8 @@ export const SHOPS: Shop[] = [
    "red_cape": 4,
    "eye_patch": 3
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "generalshopkeeper7",
@@ -2302,7 +2419,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalassistant7",
@@ -2321,7 +2439,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalshopkeeper1",
@@ -2341,7 +2460,8 @@ export const SHOPS: Shop[] = [
    "hammer": 5,
    "newcomer_map": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalassistant1",
@@ -2361,7 +2481,8 @@ export const SHOPS: Shop[] = [
    "hammer": 5,
    "newcomer_map": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "nulodion",
@@ -2379,7 +2500,8 @@ export const SHOPS: Shop[] = [
    "mcannonbook": 5,
    "ammo_mould": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "ogre_trader1",
@@ -2398,7 +2520,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "ogre_merchant",
@@ -2413,7 +2536,8 @@ export const SHOPS: Shop[] = [
    "pestle_and_mortar": 3,
    "eye_of_newt": 50
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "generalassistant3",
@@ -2432,7 +2556,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalshopkeeper3",
@@ -2451,7 +2576,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "regicidegeneralshopkeeper",
@@ -2475,7 +2601,8 @@ export const SHOPS: Shop[] = [
    "adamant_halberd": 7,
    "rune_halberd": 7
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalassistant8",
@@ -2494,7 +2621,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "generalshopkeeper8",
@@ -2513,7 +2641,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "irksol",
@@ -2526,7 +2655,8 @@ export const SHOPS: Shop[] = [
   "stock": {
    "ruby_ring": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "dwarven_shopkeeper",
@@ -2545,7 +2675,8 @@ export const SHOPS: Shop[] = [
    "chisel": 2,
    "hammer": 5
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "blurberrybarmen",
@@ -2564,7 +2695,8 @@ export const SHOPS: Shop[] = [
    "premade_sgg": 10,
    "premade_wizard_blizzard": 10
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gnome_waiter",
@@ -2588,7 +2720,8 @@ export const SHOPS: Shop[] = [
    "premade_chocchip_crunchies": 3,
    "premade_spicy_crunchies": 3
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "gnome_gulluck",
@@ -2621,7 +2754,8 @@ export const SHOPS: Shop[] = [
    "mithril_2h_sword": 1,
    "adamant_2h_sword": 1
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "werewolfshopkeeper3",
@@ -2642,7 +2776,8 @@ export const SHOPS: Shop[] = [
    "hammer": 5,
    "empty_dye_bottle": 10
   },
-  "buysAnything": true
+  "buysAnything": true,
+  "safe": true
  },
  {
   "npc": "death_barman",
@@ -2657,7 +2792,8 @@ export const SHOPS: Shop[] = [
    "wizards_mind_bomb": 12,
    "dwarven_stout": 12
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "boardgames_barmaid",
@@ -2672,7 +2808,8 @@ export const SHOPS: Shop[] = [
    "wizards_mind_bomb": 12,
    "dwarven_stout": 12
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "boardgames_barmaid2",
@@ -2687,7 +2824,8 @@ export const SHOPS: Shop[] = [
    "wizards_mind_bomb": 12,
    "dwarven_stout": 12
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  },
  {
   "npc": "magearena_guardian",
@@ -2702,6 +2840,7 @@ export const SHOPS: Shop[] = [
    "guthix_staff": 5,
    "zamorak_staff": 5
   },
-  "buysAnything": false
+  "buysAnything": false,
+  "safe": true
  }
 ];

@@ -12,6 +12,7 @@ pub mod alch_arb;
 pub mod alch_floor;
 pub mod grid;
 pub mod mean_reversion;
+pub mod shop_arb;
 
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +24,7 @@ pub use alch_arb::{AlchArbParams, AlchArbStrategy};
 pub use alch_floor::{AlchFloorParams, AlchFloorStrategy};
 pub use grid::{GridParams, GridStrategy};
 pub use mean_reversion::{MeanReversionParams, MeanReversionStrategy};
+pub use shop_arb::{ShopArbParams, ShopArbStrategy};
 
 /// Turn a quoted execution price into a limit price.
 ///
@@ -122,6 +124,8 @@ pub enum StrategyKind {
     Accumulate(AccumulateParams),
     /// Buy only stacks that high alchemy would pay for.
     AlchArb(AlchArbParams),
+    /// Buy stacks an NPC shop will pay more for than the pool charges.
+    ShopArb(ShopArbParams),
     /// Buy at the permanent alch floor, sell into strength.
     AlchFloor(AlchFloorParams),
     /// Fade moves away from a rolling mean.
@@ -136,6 +140,7 @@ impl StrategyEntry {
         match &self.kind {
             StrategyKind::Accumulate(params) => Box::new(AccumulateStrategy::new(params.clone())),
             StrategyKind::AlchArb(params) => Box::new(AlchArbStrategy::new(params.clone())),
+            StrategyKind::ShopArb(params) => Box::new(ShopArbStrategy::new(params.clone())),
             StrategyKind::AlchFloor(params) => Box::new(AlchFloorStrategy::new(params.clone())),
             StrategyKind::MeanReversion(params) => {
                 Box::new(MeanReversionStrategy::new(params.clone()))
@@ -149,6 +154,7 @@ impl StrategyEntry {
         match &self.kind {
             StrategyKind::Accumulate(params) => params.validate(),
             StrategyKind::AlchArb(params) => params.validate(),
+            StrategyKind::ShopArb(params) => params.validate(),
             StrategyKind::AlchFloor(params) => params.validate(),
             StrategyKind::MeanReversion(params) => params.validate(),
             StrategyKind::Grid(params) => params.validate(),
@@ -160,6 +166,7 @@ impl StrategyEntry {
         match self.kind {
             StrategyKind::Accumulate(_) => accumulate::NAME,
             StrategyKind::AlchArb(_) => alch_arb::NAME,
+            StrategyKind::ShopArb(_) => shop_arb::NAME,
             StrategyKind::AlchFloor(_) => alch_floor::NAME,
             StrategyKind::MeanReversion(_) => mean_reversion::NAME,
             StrategyKind::Grid(_) => grid::NAME,

@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { MIN_MULTIPLIER, sellPriceFor, sellTotal, willBuy, worthwhileCount } from './pricing';
+import { MIN_MULTIPLIER, sellPriceAt, sellPriceFor, sellTotal, willBuy, worthwhileCount } from './pricing';
 import type { Shop } from './world.generated';
 
 const shop = (over: Partial<Shop> = {}): Shop => ({
@@ -55,19 +55,20 @@ describe('what a shop pays', () => {
         expect(sellPriceFor(s, 'x', 1_000, 10_000)).toBe(100);
     });
 
-    test('an understocked shop pays a premium for what it normally carries', () => {
-        // diff = sold - base, so a shop with base stock 20 and none in hand
-        // starts 20 steps *below* zero and pays above its headline rate.
-        const stocked = shop({ stock: { firerune: 20 } });
-        expect(sellPriceFor(stocked, 'firerune', 1_000, 0)).toBe(800);
-        expect(sellPriceFor(shop(), 'firerune', 1_000, 0)).toBe(600);
+    test('a shop at its base stock pays the headline rate', () => {
+        // The neutral assumption: stocking an item does not by itself move the price.
+        expect(sellPriceFor(shop({ stock: { firerune: 20 } }), 'firerune', 1_000, 0)).toBe(600);
     });
 
-    test('the premium is capped, so a huge base stock is not free money', () => {
-        // int5 is clamped at -5000 before subtraction, and the multiplier is
-        // capped at 1000 by the min() on the adjustment.
-        const huge = shop({ stock: { x: 100_000 } });
-        expect(sellPriceFor(huge, 'x', 1_000, 0)).toBe(5_600);
+    test('a depleted shop pays a premium and an overstocked one pays less', () => {
+        const s = shop({ stock: { firerune: 20 } });
+        expect(sellPriceAt(s, 'firerune', 1_000, 0, 0)).toBe(800);
+        expect(sellPriceAt(s, 'firerune', 1_000, 40, 0)).toBe(400);
+    });
+
+    test('the premium is capped, so an empty warehouse is not free money', () => {
+        // The adjustment clamps at -5000 before subtraction.
+        expect(sellPriceAt(shop({ stock: { x: 100_000 } }), 'x', 1_000, 0, 0)).toBe(5_600);
     });
 });
 

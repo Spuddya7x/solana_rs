@@ -7,6 +7,7 @@
 //!
 //! * [`alch`] — the high-alchemy arbitrage that connects the pools to the game
 //! * [`scarcity`] — which items cannot be produced, and are worth converting GP into
+//! * [`shopflip`] — buying on chain to sell to an NPC shop, no Magic level needed
 //! * [`market`] — pool snapshots, price history and live quoting
 //! * [`strategy`] — the [`Strategy`](strategy::Strategy) trait and three built-ins
 //! * [`risk`] — the only component that can authorise a trade
@@ -27,6 +28,7 @@ pub mod market;
 pub mod portfolio;
 pub mod risk;
 pub mod scarcity;
+pub mod shopflip;
 pub mod strategy;
 pub mod testing;
 pub mod universe;

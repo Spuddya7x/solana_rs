@@ -95,6 +95,17 @@ size_items = 1
 max_items = 10
 max_premium = 1.5
 
+# The same margin as alch-arb, without the level 55 gate: buy at the pool floor
+# (36% of an item's cost) and sell to an NPC shop (60-95%). The exit is a
+# counter, not a spell — gamebot/moneymaker.ts walks it.
+[[strategies]]
+kind = "shop-arb"
+enabled = false
+min_margin = 0.2
+min_profit_gp = 500.0
+max_items = 25
+max_position_items = 100
+
 # Buy near the permanent floor, sell into strength.
 [[strategies]]
 kind = "alch-floor"

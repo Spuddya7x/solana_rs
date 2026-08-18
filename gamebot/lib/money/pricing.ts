@@ -28,16 +28,35 @@ import type { Shop } from './world.generated';
 export const MIN_MULTIPLIER = 100;
 
 /**
- * GP a shop pays for one unit of an item, given how many have already been sold
- * into it this visit.
+ * GP a shop pays for one unit, given the shop's current stock and how many have
+ * already been sold this visit.
  *
- * A shop that stocks the item prices from its *base* stock, so selling into a
- * depleted shop pays more than the headline multiplier, and selling into a
- * well-stocked one pays less.
+ * `diff` is `current + sold - base`, so a depleted shop pays above the headline
+ * multiplier and an overstocked one pays below it.
+ */
+export function sellPriceAt(
+    shop: Shop,
+    item: string,
+    cost: number,
+    currentStock: number,
+    alreadySold: number,
+): number {
+    const diff = currentStock + alreadySold - (shop.stock[item] ?? 0);
+    const adjustment = Math.min(1000, Math.max(-5000, diff * shop.haggle));
+    const multiplier = Math.max(MIN_MULTIPLIER, shop.buyMultiplier - adjustment);
+    return Math.floor((multiplier * cost) / 1000);
+}
+
+/**
+ * The same, assuming the shop sits at its base stock — the neutral assumption
+ * and the one to plan with. A depleted shop pays more (the adjustment clamps at
+ * -5000, so up to 5.7x cost), but planning on that promises profits that only
+ * exist if nobody has traded there recently.
  */
 export function sellPriceFor(shop: Shop, item: string, cost: number, alreadySold: number): number {
     const base = shop.stock[item] ?? 0;
-    const diff = alreadySold - base;
+    const diff = alreadySold;
+    void base;
     const adjustment = Math.min(1000, Math.max(-5000, diff * shop.haggle));
     const multiplier = Math.max(MIN_MULTIPLIER, shop.buyMultiplier - adjustment);
     return Math.floor((multiplier * cost) / 1000);

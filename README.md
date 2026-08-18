@@ -111,12 +111,39 @@ does lands in an append-only JSONL journal that `mercbot report` summarises.
 | Strategy | Idea |
 |---|---|
 | `accumulate` | **The exit.** Converts GP into items whose supply cannot grow. Never sells. |
+| `shop-arb` | The alchemy margin without the level 55 gate — the exit is an NPC counter. |
 | `alch-arb` | Buys only stacks High Level Alchemy would pay for. Exits through the game, not the pool. |
 | `alch-floor` | Buys near the permanent floor, sells into strength. |
 | `mean-reversion` | Fades moves away from a rolling mean, gated on the floor premium. |
 | `grid` | A ladder anchored to the floor — the one price here that never drifts. |
 
 `mercbot strategies` describes them; `mercbot.example.toml` configures them.
+
+## Two exits from a pool position
+
+Alchemy is not the only buyer. A pool's floor is **36% of an item's cost**; an
+NPC shopkeeper's `shop_buy_multiplier` is **600–950**, so selling at a counter
+returns 60–95%. That is the same 1.67× high alchemy pays at the low end, better
+at the high end — and it needs **no Magic level, no runes, and no level 55 gate**.
+
+```
+$ mercbot shop-flip --limit 4
+market                   items      buy GP     shop GP     profit  margin  sell to
+dragon_sq_shield            10     2024889     2525000     500111     25%  Legends Guild General Store.
+dragon_chainbody            10     1014796     1262500     247704     24%  Legends Guild General Store.
+twpart1                     10      762273      946875     184602     24%  Legends Guild General Store.
+```
+
+Both decays are modelled rather than assumed: the pool charges more per item as
+you buy, and the shop pays less per item as you sell (`haggle/1000` of cost per
+unit), so `items` is where the two curves cross. Revenue is priced with the
+counter at its **base stock** — a depleted shop pays far more, up to 5.7× cost,
+but planning on that promises profit that only exists if nobody traded there
+recently.
+
+Wilderness counters are excluded. The wilderness is bounded in **x as well as z**
+(`wilderness_zones.dbrow`: x 2944–3391, z 3520–6399), so a z-only test condemns
+Rellekka and the north-west; the real bounds put only two shops inside it.
 
 ## Getting an account to level 55
 
