@@ -35,6 +35,7 @@ import {
     xpForLevel,
 } from './lib/spells';
 import { SPLASH_KIT, equippedMagicAttack, splashGuaranteed, unwornKit } from './lib/splash';
+import { NAV, capabilities, here, travelTo } from './lib/nav';
 
 const args = process.argv.slice(2);
 const flag = (name: string, fallback: string) => {
@@ -52,6 +53,8 @@ const SPLASH_TARGET = flag('npc', 'chicken');
  * zombie in the Varrock sewers, say. Without one the ladder tops out at Curse.
  */
 const UNDEAD_TARGET = flag('undead', '');
+/** Travel to a suitable spot before training, using the navigation graph. */
+const TRAVEL = !args.includes('--no-travel');
 /** Refuse to cast a stat-reduction spell without the gear to guarantee a miss. */
 const REQUIRE_SPLASH_GEAR = !args.includes('--allow-hits');
 
@@ -59,6 +62,7 @@ await runScript(async ({ bot, sdk }) => {
     await bot.skipTutorial();
     await sdk.waitForReady();
     await equipSplashKit();
+    await travelToTrainingGround();
 
     for (;;) {
         const magic = sdk.getSkill('magic');
@@ -145,6 +149,26 @@ await runScript(async ({ bot, sdk }) => {
                 console.log(`  ${casts} casts (${hits} landed), magic ${sdk.getSkill('magic')?.level}`);
             }
         }
+    }
+
+    /**
+     * Walk to somewhere with the right targets.
+     *
+     * Crumble Undead needs skeletons or zombies; everything else just needs
+     * something harmless. The navigation graph knows where both are, so the
+     * script does not carry coordinates.
+     */
+    async function travelToTrainingGround(): Promise<void> {
+        if (!TRAVEL) return;
+        const level = sdk.getSkill('magic')?.level ?? 1;
+        const tag = UNDEAD_TARGET !== '' && level >= SPELLS.CRUMBLE_UNDEAD.level ? 'undead' : 'chickens';
+        const nearest = NAV.nearestTagged(here(sdk), tag, capabilities(sdk));
+        if (!nearest) {
+            console.log(`no ${tag} site in the gazetteer — training wherever the bot is standing`);
+            return;
+        }
+        const result = await travelTo(bot, sdk, nearest.place.id);
+        console.log(`travel to ${nearest.place.name}: ${result.message}`);
     }
 
     /** Wear whatever splash gear is in the inventory. */

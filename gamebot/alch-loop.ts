@@ -19,6 +19,7 @@ import { runScript } from '../../sdk/runner';
 import { alchInventory, missingRunes } from './lib/alch';
 import { SPELLS } from './lib/spells';
 import { claimDeposits, withdrawGpToWallet } from './lib/bridge';
+import { NAV, capabilities, here, travelTo } from './lib/nav';
 
 const args = process.argv.slice(2);
 const flag = (name: string, fallback: string) => {
@@ -42,6 +43,16 @@ await runScript(async ({ bot, sdk }) => {
         throw new Error(
             `magic ${magic?.level ?? '?'} — high alchemy needs 55. Run train-magic.ts first.`,
         );
+    }
+
+    // Every bank has an Exchange Clerk beside it (server/content/place-clerks.ts),
+    // so "go to a bank" and "go to the bridge" are the same trip.
+    if ((has('claim') || has('withdraw-gp')) && !args.includes('--no-travel')) {
+        const nearest = NAV.nearestTagged(here(sdk), 'clerk', capabilities(sdk));
+        if (nearest) {
+            const result = await travelTo(bot, sdk, nearest.place.id);
+            console.log(`travel to ${nearest.place.name}: ${result.message}`);
+        }
     }
 
     if (has('claim')) {

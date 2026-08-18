@@ -47,6 +47,8 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 | `lib/alch.ts` | Spell-on-item casting with XP-based completion detection. |
 | `lib/bridge.ts` | Exchange Clerk dialogue: claim, withdraw GP, withdraw items. |
 | `lib/economics.ts` | Alch values and break-evens, mirroring the Rust `alch` module. |
+| `lib/nav/` | Navigation: gazetteer, router, executor. See below. |
+| `tools/build-places.ts` | Regenerates the gazetteer from the game's map data. |
 
 ## The training route, and why it is nearly free
 
@@ -140,6 +142,39 @@ bun bots/alchbot/train-magic.ts --target 39 --npc chicken
 bun bots/alchbot/train-magic.ts --target 55 --undead skeleton
 bun bots/alchbot/alch-loop.ts --alch "rune platebody" --claim --withdraw-gp
 ```
+
+## Navigation
+
+The SDK already solves tile-level movement — `bot.walkTo` pathfinds over the full
+collision map (1M tiles, 2,603 doors), opens doors, and detects being stuck. What
+it cannot do is anything that is not a walk, or answer "where is the nearest
+bank". `lib/nav/` is that layer:
+
+```ts
+import { travelTo, NAV, capabilities, here } from './lib/nav';
+
+await travelTo(bot, sdk, 'aubury');                  // named destination
+const bank = NAV.nearestTagged(here(sdk), 'bank', capabilities(sdk));
+```
+
+* **Gazetteer** — 200+ places. Region names come from `maps/labels.txt`; banks,
+  undead sites and chicken farms are clustered from the `==== NPC ====` sections
+  of the map squares; shops, the sewer manhole and the Wizards' Guild are curated
+  and individually sourced. Nothing is remembered — `bun tools/build-places.ts`
+  regenerates it.
+* **Router** — Dijkstra over *transitions*, asking the pathfinder for walk costs
+  rather than storing a road network. Requirements are edges' preconditions, so a
+  teleport the bot has no law runes for simply is not an edge, and the route
+  found is one the bot can actually take.
+* **Executor** — walks each step and **verifies arrival** before the next one, so
+  a failed climb stops the run instead of leaving the bot casting at the wrong
+  floor.
+
+Transitions currently modelled: the five free teleports (level, runes and landing
+coordinates from `magic_spells.dbrow`), the Varrock sewer manhole, and the
+Wizards' Guild door and staircase. Adding more is a data edit in `lib/nav/links.ts`.
+
+`bun test lib/nav/` runs the router tests — pure logic, no game needed.
 
 ## Runes
 

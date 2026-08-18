@@ -56,7 +56,7 @@ Nothing above sends a transaction. Live trading needs three independent gates:
 | `crates/mercantile-core` | Registry parsing, amount and price conversions, alchemy economics. |
 | `crates/mercantile-dex` | `cp_amm` pool decoding, the program's swap math, swap building, RPC. |
 | `crates/mercantile-bot` | The framework and the `mercbot` binary. |
-| `gamebot/` | The in-game half. See [`gamebot/README.md`](gamebot/README.md). |
+| `gamebot/` | The in-game half: training, alchemy, bridging, navigation. See [`gamebot/README.md`](gamebot/README.md). |
 
 ## The framework
 
@@ -127,6 +127,28 @@ Allowing alchemy (`--with-alchemy`) is faster and cheaper still — 2.8 hours,
 route only opens at **66 Magic**, the Wizards' Guild door and the game's only
 unbounded nature rune supply. 66 is the real target; 55 is where the paying
 starts.
+
+## Can real money leave?
+
+**Not today.** Checked rather than assumed: DexScreener lists 30 pairs for the GP
+mint and **every one is item/GP** — zero pairs price GP against anything, zero
+have a USD price, zero have USD liquidity. Jupiter returns `NO_ROUTES_FOUND` for
+GP to SOL. The economy is closed.
+
+That cuts both ways, and the second half matters more:
+
+* Nothing can be cashed out. All profit is GP-denominated, and the alch loop
+  *mints* GP, so it dilutes the very thing it accumulates.
+* Nothing has to be paid in either. Entry costs transaction fees and nothing
+  else, so accumulation here is close to free optionality on the game becoming
+  something people pay for.
+
+If a fiat bridge ever appears it will be a permissionless GP/SOL pool someone
+chooses to fund, or peer-to-peer sales of the tokens themselves. Either way the
+asset worth holding is the **scarce** one. GP has 10B supply and unbounded
+alchemy minting; the discontinued rares have a hundred units apiece and a floor
+of 10M GP, and cannot be alched at all (`cost: 1`). The strategic read is that
+the alch loop is a GP *pump*, and GP's job is to be converted into scarcity.
 
 ## Two things about this market that cost money to learn
 
