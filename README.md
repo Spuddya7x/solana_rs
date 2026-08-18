@@ -219,6 +219,18 @@ The single biggest upgrade is **Thieving 10**, which costs about seven minutes
 and doubles the rate by unlocking farmers — nine coins for the same one-hitpoint
 stun. Cooking 34 is next: below it, `successchance 128,512` burns half the catch.
 
+## Watching a run
+
+`gamebot/dashboard/server.ts` opens a separate window that watches a running bot
+without touching it. The gateway's SDK protocol has an `observe` mode — read-only
+state plus `say`, never pre-empts a controller and is never pre-empted by one —
+so the dashboard attaches to any of the scripts, including one that started
+before it, and closing the window changes nothing.
+
+Everything on it is derived from observed world state; the bot scripts report
+nothing. Run `gamebot/dashboard/preview.ts` to see it against a synthetic
+session with no game attached. `gamebot/README.md` has the details.
+
 ## Getting an account to level 55
 
 The bot that buys is useless without an account that can alch. That is

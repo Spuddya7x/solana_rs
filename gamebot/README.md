@@ -56,6 +56,9 @@ and read credentials from the `bot.env` beside them. Run the world locally with
 | `lib/money/` | The ground-spawn circuit, shop pricing, and verified safespots. |
 | `lib/nav/` | Navigation: gazetteer, router, executor. See below. |
 | `tools/build-places.ts` | Regenerates the gazetteer from the game's map data. |
+| `dashboard/server.ts` | Watches a running bot read-only and serves the session window. |
+| `dashboard/stats.ts` | Turns observed world states into rates, ETAs and an activity log. |
+| `dashboard/preview.ts` | Serves the window against a synthetic session, no game needed. |
 | `tsconfig.json` | Typechecks this bot. The repo's own config does not cover `bots/`. |
 
 ## Making the first 20,000 GP
@@ -167,6 +170,53 @@ Two results worth acting on:
 
 An inventory of 25 shrimp is 75 hitpoints, which is about ten minutes of farmers.
 That short trip length, not the thieving, is what caps the rate.
+
+## Watching a run
+
+```sh
+bun bots/<name>/dashboard/server.ts          # http://localhost:8420
+bun bots/<name>/dashboard/preview.ts         # the same window, synthetic data
+```
+
+A separate window that watches a bot **without touching it**. The gateway's SDK
+protocol has two connection modes and the second is what makes this work:
+
+* `control` — full actions, and connecting **pre-empts any existing
+  controller**. Two control connections fight; the newcomer wins.
+* `observe` — read-only state and chat plus `say`. Never pre-empts, is never
+  pre-empted, and observers coexist freely. `sdk_action` from an observer is
+  rejected by the gateway unless it is `say`, so this is the protocol's rule
+  rather than a convention here.
+
+So the dashboard attaches as an observer, gets the same `BotWorldState` frames
+the controller sees, and works against any script in this directory — including
+one that was already running before the window opened. Closing it changes
+nothing. The scripts report nothing and do not know it exists.
+
+Everything shown is **derived** from those frames by `dashboard/stats.ts`, which
+is where the correctness lives and is tested on its own. Two things that pass
+for details and are not:
+
+* **`baseLevel` is the true level, `level` is the boosted or drained one.** For
+  a thieving bot this is the difference between a working display and a broken
+  one: its Hitpoints are drained essentially all the time, so reading `level`
+  reports the account as lower-levelled and aims the next-level target at a
+  threshold it passed hours ago. The skills table shows the true level with the
+  drained value beside it, the way the client does — `10 (7)`.
+* **Coins are inventory, not a ledger.** Selling, dropping and dying all move
+  the number and none of them are earnings, so it is labelled *carried*, not
+  *profit*, and it is allowed to go negative. XP is monotonic and is the axis to
+  believe when the two disagree.
+
+Level-ups are logged off the level itself rather than the game's congratulation:
+the message feed is a bounded rolling window, so a busy tick can push one out,
+but a level cannot be missed. The activity line is read from the engine's own
+`mes(...)` strings — `pick_pocket` says "You pick the man's pocket" and
+`~fail_pick_pocket` says "You fail to pick the pocket", which is how the paint
+tells a successful run from a stunned one.
+
+The server binds to loopback on purpose: the page has no authentication and the
+observer socket behind it is already authenticated as the bot.
 
 ## Selling to shops
 

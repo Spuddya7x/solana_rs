@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mercbot — session</title>
+<style>
+/*
+ * The 2004 client's own palette, so the window sits next to the game rather
+ * than on top of it: stone browns for the chrome, that particular orange for
+ * headings, and the four-column inventory grid the client has always used.
+ */
+:root {
+    --stone:      #3e3529;
+    --stone-dark: #2b241b;
+    --stone-lit:  #574b3a;
+    --edge:       #1c1710;
+    --parchment:  #d8ccb0;
+    --gold:       #ff981f;
+    --gold-dim:   #c9791a;
+    --green:      #3cc23c;
+    --red:        #d33;
+    --blue:       #6cf;
+    --ink:        #0d0b08;
+}
+* { box-sizing: border-box; }
+html, body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--parchment);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+}
+body { padding: 10px; }
+
+.frame {
+    display: grid;
+    /* The inventory is a fixed 4-across grid, so give it a fixed-ish column and
+       let the session panel take whatever is left rather than fighting it. */
+    grid-template-columns: minmax(0, 1fr) 292px;
+    gap: 10px;
+    max-width: 1060px;
+    margin: 0 auto;
+    align-items: start;
+}
+@media (max-width: 860px) { .frame { grid-template-columns: minmax(0, 1fr); } }
+
+.panel {
+    background: var(--stone);
+    border: 2px solid var(--edge);
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px var(--stone-lit);
+    padding: 8px 10px 10px;
+    min-width: 0;
+}
+.panel > h2 {
+    margin: 0 0 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--edge);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+
+/* --- masthead ---------------------------------------------------------- */
+.masthead {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 16px;
+}
+.masthead h1 {
+    margin: 0;
+    font-size: 16px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.masthead .who { color: #fff; font-weight: 700; }
+.masthead .spacer { flex: 1 1 auto; }
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+.dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+/* --- the paint: big numbers, the way a bot overlay shows them ---------- */
+.paint {
+    display: grid;
+    /* Wide enough that "1h 04m 12s" and "3221,3218" stay on one line. */
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 6px;
+}
+.stat {
+    background: var(--stone-dark);
+    border: 1px solid var(--edge);
+    border-radius: 2px;
+    padding: 6px 8px;
+}
+.stat .k {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+}
+.stat .v {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.stat .v.up { color: var(--green); }
+.stat .v.down { color: var(--red); }
+.stat .sub {
+    font-size: 10px;
+    color: var(--gold-dim);
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- hitpoint bar ------------------------------------------------------ */
+.bar {
+    height: 13px;
+    background: var(--stone-dark);
+    border: 1px solid var(--edge);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+.bar > i {
+    display: block;
+    height: 100%;
+    background: var(--green);
+    transition: width 0.3s ease, background 0.3s ease;
+}
+.bar.low > i { background: var(--red); }
+.bar > span {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 1px #000;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- skills ------------------------------------------------------------ */
+table.skills { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+table.skills th {
+    text-align: right;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    font-weight: 400;
+    padding: 0 0 4px;
+}
+table.skills th:first-child { text-align: left; }
+table.skills td { padding: 3px 0; text-align: right; border-top: 1px solid var(--stone-dark); }
+table.skills td:first-child { text-align: left; color: #fff; }
+table.skills .lvl { color: var(--gold); font-weight: 700; }
+table.skills .gain { color: var(--green); }
+table.skills .eta { color: var(--blue); font-size: 11px; }
+table.skills .drain { color: var(--red); font-weight: 400; font-size: 11px; }
+table.skills tr.idle td { opacity: 0.45; }
+
+/* --- inventory: the client's own 4-across grid ------------------------- */
+.inv {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    /* The client's grid is squarish and small; letting these expand to fill a
+       wide column turns the panel into seven rows of oversized empty boxes.
+       Centred, so the single-column layout does not strand it against one edge. */
+    max-width: 268px;
+    margin: 0 auto;
+}
+.slot {
+    aspect-ratio: 1;
+    background: var(--stone-dark);
+    border: 1px solid var(--edge);
+    border-radius: 2px;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+}
+.slot.empty { opacity: 0.35; }
+.slot .n {
+    font-size: 9px;
+    line-height: 1.15;
+    color: var(--parchment);
+    word-break: break-word;
+}
+.slot .c {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    align-self: flex-end;
+}
+
+/* --- log --------------------------------------------------------------- */
+.log {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 220px;
+    overflow-y: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+}
+.log li { padding: 1px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.25); }
+.log time { color: var(--gold-dim); margin-right: 6px; }
+.log li.levelup { color: var(--gold); font-weight: 700; }
+.log li.loot { color: var(--green); }
+.log li.damage { color: var(--red); }
+.log li.system { color: #9c907a; }
+
+.foot {
+    grid-column: 1 / -1;
+    color: #8b8069;
+    font-size: 11px;
+    text-align: center;
+    padding-top: 2px;
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+    <header class="panel masthead">
+        <h1>mercbot</h1>
+        <span class="who" id="who">—</span>
+        <span id="combat" style="color:var(--gold-dim)"></span>
+        <span class="spacer"></span>
+        <span class="status"><i class="dot" id="dot"></i><span id="conn">waiting for the bot</span></span>
+    </header>
+
+    <main class="panel">
+        <h2>Session</h2>
+        <div class="paint" id="paint"></div>
+        <div style="margin-top:8px">
+            <div class="bar" id="hpbar"><i style="width:0%"></i><span id="hptext">— / —</span></div>
+        </div>
+        <h2 style="margin-top:14px">Skills</h2>
+        <table class="skills">
+            <thead>
+                <tr><th>Skill</th><th>Lvl</th><th>XP gained</th><th>XP/hr</th><th>Next lvl</th></tr>
+            </thead>
+            <tbody id="skills"><tr><td colspan="5" style="opacity:.5">no frames yet</td></tr></tbody>
+        </table>
+    </main>
+
+    <aside class="panel">
+        <h2>Inventory</h2>
+        <div class="inv" id="inv"></div>
+    </aside>
+
+    <section class="panel" style="grid-column: 1 / -1">
+        <h2>Activity</h2>
+        <ul class="log" id="log"></ul>
+    </section>
+
+    <footer class="foot" id="foot">
+        Attached read-only in <code>observe</code> mode — the bot is not being controlled from this window.
+    </footer>
+</div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+
+const fmtCount = (v) => {
+    const n = Math.round(v);
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(n);
+    if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1)}M`;
+    if (abs >= 1e4) return `${sign}${Math.round(abs / 1000)}K`;
+    if (abs >= 1e3) return `${sign}${(abs / 1000).toFixed(1)}K`;
+    return `${sign}${abs}`;
+};
+
+const fmtTime = (seconds) => {
+    const s = Math.max(0, Math.floor(seconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return h > 0 ? `${h}h ${pad(m)}m ${pad(sec)}s` : `${m}m ${pad(sec)}s`;
+};
+
+const stat = (label, value, { sub = '', tone = '' } = {}) => `
+    <div class="stat">
+        <div class="k">${label}</div>
+        <div class="v ${tone}">${value}</div>
+        ${sub ? `<div class="sub">${sub}</div>` : ''}
+    </div>`;
+
+const escapeHtml = (s) =>
+    String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function render(session) {
+    $('who').textContent = session.name ?? 'not logged in';
+    $('combat').textContent = session.combatLevel ? `combat ${session.combatLevel}` : '';
+
+    const live = session.inGame;
+    $('dot').className = `dot${live ? ' live' : ''}`;
+    $('conn').textContent = live
+        ? `in game · tick ${session.tick}`
+        : session.frames > 0 ? 'connected, not logged in' : 'waiting for the bot';
+
+    const pos = session.position;
+    const coinTone = session.coinsGained > 0 ? 'up' : session.coinsGained < 0 ? 'down' : '';
+
+    $('paint').innerHTML = [
+        stat('Runtime', fmtTime(session.runtimeSeconds), { sub: `${session.frames} frames` }),
+        stat('Activity', escapeHtml(session.activity)),
+        stat('Coins', fmtCount(session.coins), {
+            sub: `${session.coinsGained >= 0 ? '+' : ''}${fmtCount(session.coinsGained)} this session`,
+            tone: coinTone,
+        }),
+        stat('GP / hour', fmtCount(session.coinsPerHour), { tone: coinTone }),
+        stat('XP gained', fmtCount(session.totalXpGained), { tone: session.totalXpGained > 0 ? 'up' : '' }),
+        stat('XP / hour', fmtCount(session.totalXpPerHour)),
+        stat('Position', pos ? `${pos.x},${pos.z}` : '—', { sub: pos ? `plane ${pos.level}` : '' }),
+        stat('Run', `${Math.round(session.runEnergy)}%`),
+    ].join('');
+
+    const hp = session.hp;
+    const pct = hp && hp.max > 0 ? (hp.current / hp.max) * 100 : 0;
+    const bar = $('hpbar');
+    bar.className = `bar${pct <= 30 ? ' low' : ''}`;
+    bar.querySelector('i').style.width = `${pct}%`;
+    $('hptext').textContent = hp ? `${hp.current} / ${hp.max} hp` : '— / —';
+
+    $('skills').innerHTML = session.skills.length
+        ? session.skills
+              .map((s) => {
+                  const moving = s.gained > 0;
+                  // An idle skill's "next level" is a distance nothing is
+                  // closing, so it is noise; only show it where it means something.
+                  const next = !moving
+                      ? '—'
+                      : s.toNextLevel === null
+                        ? 'max'
+                        : `${fmtCount(s.toNextLevel)} · ${s.secondsToLevel !== null ? fmtTime(s.secondsToLevel) : '—'}`;
+                  // `current` is the boosted or drained value. Showing it next to
+                  // the true level is how the client does it, and for a thieving
+                  // bot the hitpoints row is drained almost all the time.
+                  const drained = s.current !== s.level ? ` <span class="drain">(${s.current})</span>` : '';
+                  const gainedLevels = s.level > s.startLevel ? ` <span class="gain">+${s.level - s.startLevel}</span>` : '';
+                  return `<tr class="${moving ? '' : 'idle'}">
+                    <td>${escapeHtml(s.name)}</td>
+                    <td class="lvl">${s.level}${drained}${gainedLevels}</td>
+                    <td class="${moving ? 'gain' : ''}">${moving ? fmtCount(s.gained) : '—'}</td>
+                    <td>${moving ? fmtCount(s.perHour) : '—'}</td>
+                    <td class="eta">${next}</td>
+                  </tr>`;
+              })
+              .join('')
+        : '<tr><td colspan="5" style="opacity:.5">no frames yet</td></tr>';
+
+    $('inv').innerHTML = session.inventory
+        .map((slot) =>
+            slot
+                ? `<div class="slot" title="${escapeHtml(slot.name)}">
+                     <div class="n">${escapeHtml(slot.name)}</div>
+                     <div class="c">${slot.count > 1 ? fmtCount(slot.count) : ''}</div>
+                   </div>`
+                : '<div class="slot empty"></div>',
+        )
+        .join('');
+
+    const log = $('log');
+    // Only stick to the bottom if the reader is already there — otherwise
+    // scrolling back through the run fights the next update.
+    const pinned = log.scrollTop + log.clientHeight >= log.scrollHeight - 24;
+    log.innerHTML = session.log
+        .map((entry) => {
+            const at = new Date(entry.at).toLocaleTimeString();
+            return `<li class="${entry.kind}"><time>${at}</time>${escapeHtml(entry.text)}</li>`;
+        })
+        .join('');
+    if (pinned) log.scrollTop = log.scrollHeight;
+}
+
+function connect() {
+    const socket = new WebSocket(`ws://${location.host}/ws`);
+    socket.onmessage = (event) => render(JSON.parse(event.data));
+    socket.onclose = () => {
+        $('dot').className = 'dot';
+        $('conn').textContent = 'dashboard disconnected — retrying';
+        setTimeout(connect, 1500);
+    };
+}
+connect();
+</script>
+</body>
+</html>
