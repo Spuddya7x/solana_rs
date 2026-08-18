@@ -126,6 +126,23 @@ bun bots/mercbot/dashboard/server.ts --server localhost:8888
 Open <http://localhost:8420>. It attaches as an **observer**, so it never
 disturbs whatever is driving the bot.
 
+## Four terminals means four terminals
+
+Each of the first three blocks **stays running** and occupies its window. The
+gateway does not return to a prompt; neither does the engine or the client. Open
+a new terminal for each.
+
+Two traps that follow from that on `cmd.exe`:
+
+* **`set` does not carry between terminals.** `set BUILD_VERIFY=false` has to be
+  run in the same window as `bun run src/app.ts`.
+* **The `cd` lines above are written from the mercantile root**, not from
+  wherever the previous block left you. Use an absolute path if in doubt:
+  `cd F:\path\to\mercantile\server\engine`.
+
+And do not paste a whole block at once into `cmd`: a comment line lands on the
+end of the previous command rather than being ignored. One line at a time.
+
 ## A note on Windows
 
 Everything here was verified on Linux. The four services are all `bun`, which is
@@ -160,17 +177,21 @@ there is no automation for the tutorial.
 
 ## Then run something
 
-```sh
-# The money maker. Start small and watch it.
-bun bots/mercbot/thief.ts --target 200 --minutes 5
+The money maker, kept short so you can watch it:
 
-# Or drive it by hand from the dashboard console:
-#   thieve            the pickpocket table at your level
-#   where             position, hitpoints, what it looks like it is doing
-#   npcs man          what is in range
-#   control --force   take the character (disconnects the running script)
-#   pickpocket man 5  five attempts, each outcome named
+```sh
+bun bots/mercbot/thief.ts --target 200 --minutes 5
 ```
+
+Or drive it by hand from the dashboard console:
+
+| command | what it does |
+| --- | --- |
+| `thieve` | the pickpocket table at your level |
+| `where` | position, hitpoints, what it looks like it is doing |
+| `npcs man` | what is in range |
+| `control --force` | take the character (disconnects the running script) |
+| `pickpocket man 5` | five attempts, each outcome named |
 
 ## What is verified, and what is not
 
