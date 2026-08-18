@@ -1,0 +1,10 @@
+{
+  "name": "mercbot-gamebot",
+  "private": true,
+  "type": "module",
+  "description": "In-game half of mercbot: magic training, alchemy production, and Exchange Clerk bridging. Copy into a mercantile checkout under bots/<name>/.",
+  "scripts": {
+    "train": "bun train-magic.ts",
+    "alch": "bun alch-loop.ts"
+  }
+}
